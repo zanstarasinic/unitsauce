@@ -41,3 +41,15 @@ class VerifyContext:
 
     # --- Failure ---
     original_error_message: Optional[str] = None
+
+@dataclass
+class FixResult:
+    test_file: str
+    test_function: str
+
+    error_message: str
+    fixed: bool
+    fix_type: str
+    
+    diff: str
+    file_changed: str

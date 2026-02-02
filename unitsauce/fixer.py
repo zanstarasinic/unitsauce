@@ -1,14 +1,15 @@
 import os
 import re
 import shutil
-from analysis import gather_context, get_single_file_diff, index_file_functions, run_single_test, run_tests, show_diff, split_functions_raw
+from .analysis import gather_context, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
-from models import FixContext, VerifyContext
+from .models import FixContext, VerifyContext
+from .prompts import fix_code_prompt, fix_test_prompt
 from rich.spinner import Spinner
 from rich.live import Live
-from utils import backup_file, console
+from .utils import backup_file, console
 
 load_dotenv()
 
@@ -112,3 +113,63 @@ def fix(ctx: FixContext):
             original_error_message=ctx.error_message,
         )
         return verify_fix(verify_ctx)
+
+def try_fix_test(failure, test_file_path, test_code, source_file, source_code, path):
+    """Attempt to fix the test file."""
+    context = FixContext(
+        prompt=fix_test_prompt,
+        function_name=failure['function'],
+        file_path=test_file_path,
+        function_code=source_code,
+        test_code=test_code,
+        error_message=failure['error'],
+        repo_path=path,
+        test_file=failure['file'],
+        test_function=failure['function']
+    )
+    return fix(context)
+
+
+def try_fix_code(failure, test_code, source_file, source_code, path):
+    """Attempt to fix the source code."""
+    context = FixContext(
+        prompt=fix_code_prompt,
+        function_name=source_file,
+        file_path=source_file,
+        function_code=source_code,
+        test_code=test_code,
+        error_message=failure['error'],
+        repo_path=path,
+        test_file=failure['file'],
+        test_function=failure['function']
+    )
+    return fix(context)
+
+def attempt_fix(failure, changed_files, path, mode):
+    test_file_path, test_code = read_file_content(failure['file'], path)
+
+    guessed_name = failure['file'].split("/")[-1].replace("test_", "")
+
+    if guessed_name in changed_files:
+        files_to_try = [guessed_name] + [f for f in changed_files if f != guessed_name]
+    else:
+        files_to_try = changed_files
+
+    for source_file in files_to_try:
+        source_path, source_code = read_file_content(source_file, path)
+        if not source_path:
+            continue
+        
+        if mode == 'test':
+            if try_fix_test(failure, test_file_path, test_code, source_path, source_code, path):
+                return True
+                
+        elif mode == 'code':
+            if try_fix_code(failure, test_file_path, test_code, source_path, source_code, path):
+                return True
+                
+        elif mode == 'auto':
+            if try_fix_test(failure, test_file_path, test_code, source_path, source_code, path):
+                return True
+    
+    return False

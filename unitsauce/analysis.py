@@ -10,7 +10,7 @@ from rich.syntax import Syntax
 from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.live import Live
-from utils import console
+from .utils import console
 
 def show_diff(original, new, file_name):
     diff = difflib.unified_diff(

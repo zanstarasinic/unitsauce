@@ -1,0 +1,17 @@
+name: Test Workflow
+on: [push]
+jobs:
+    Test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+              with:
+                python-version: '3.11'
+            - run: pip install unitsauce
+            - run: pip install pytest
+            - run: pytest
+            - if: failure()
+              run: unitsauce . --output markdown >> $GITHUB_STEP_SUMMARY
+              env:
+                ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

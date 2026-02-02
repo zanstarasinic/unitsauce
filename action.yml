@@ -1,0 +1,40 @@
+name: 'UnitSauce'
+description: 'AI-powered test failure analysis and fix suggestions'
+author: 'Zan Starasinic'
+
+branding:
+  icon: 'check-circle'
+  color: 'green'
+
+inputs:
+  anthropic_api_key:
+    description: 'Anthropic API key'
+    required: true
+  mode:
+    description: 'Fix mode: auto, code, test'
+    required: false
+    default: 'auto'
+
+  outputs:
+    result:
+      description: 'JSON result of fix attempts'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install UnitSauce
+      shell: bash
+      run: |
+        pip install ${{ github.action_path }}
+    
+    - name: Run UnitSauce
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic_api_key }}
+      run: |
+        unitsauce . --mode ${{ inputs.mode }} --output markdown >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,48 @@
+Metadata-Version: 2.4
+Name: unitsauce
+Version: 0.1.0
+Summary: AI-powered test failure analysis and fix suggestions
+Author: Zan Starasinic
+License: MIT
+Project-URL: Homepage, https://github.com/zanstarasinic/unitsauce
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: anthropic
+Requires-Dist: python-dotenv
+Requires-Dist: art
+Requires-Dist: rich
+Requires-Dist: pytest
+Requires-Dist: pytest-json-report
+
+# UnitSauce
+
+AI-powered test fixer for Python projects.
+
+## What it does
+
+Analyzes failing tests, identifies bugs in recent code changes, and suggests fixes using Claude.
+
+## Install
+```bash
+pip install -r requirements.txt
+cp .env.example .env
+# Add your Anthropic API key to .env
+```
+
+## Usage
+```bash
+python main.py /path/to/your/project
+```
+
+The tool will:
+1. Run pytest and detect failures
+2. Analyze git diff to find recent changes
+3. Ask if you want to fix the code or update the test
+4. Generate and apply a fix
+5. Verify the fix works
+
+## Requirements
+
+- Python 3.10+
+- Anthropic API key
+- Project must be a git repository
