@@ -126,17 +126,19 @@ def split_functions_raw(code):
     
     return functions
 
-def read_file_content(file, path, is_file_path = False):
+def read_file_content(file, path, is_file_path=False):
     if is_file_path:
-        with open(file, 'r') as f:
+        with open(file, 'r', encoding='utf-8', errors='ignore') as f:
             file_content = f.read()
-        
         return file, file_content
+    
     file_path = next(Path(path).rglob(file), None)
     if not file_path:
-        return None
-    with open(file_path) as open_file:
+        return None, None
+    
+    with open(file_path, encoding='utf-8', errors='ignore') as open_file:
         file_content = open_file.read()
+    
     return file_path, file_content
 
 def gather_context(diff, function_code):
