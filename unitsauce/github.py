@@ -1,7 +1,7 @@
 import json
 import os
 
-import requests
+import httpx
 
 def check_if_pull_request():
     event_name = os.getenv("GITHUB_EVENT_NAME")
@@ -41,7 +41,7 @@ def post_pr_comment(repo, pr_number, body):
     }
     
     # Use requests or httpx
-    response = requests.post(url, json={"body": body}, headers=headers)
+    response = httpx.post(url, json={"body": body}, headers=headers)
     return response.status_code == 201
 
 
