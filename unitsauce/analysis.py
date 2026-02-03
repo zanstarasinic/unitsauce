@@ -65,7 +65,7 @@ def get_failing_tests(path):
 
 def get_git_diff(path):
     changed_files = subprocess.run(
-                    ["git", "diff", "--name-only", "HEAD", "--", ".", ":(exclude)tests"],
+                    ["git", "diff", "--name-only", "HEAD~1", "--", ".", ":(exclude)tests"],
                     cwd=path,
                     capture_output=True,
                     text=True,
@@ -76,7 +76,7 @@ def get_git_diff(path):
 
 def get_single_file_diff(path, changed_file_path):
     changed_file_diff = subprocess.run(
-                    ["git", "diff", "HEAD", "--", changed_file_path],
+                    ["git", "diff", "HEAD~1", "--", changed_file_path],
                     cwd=path,
                     capture_output=True,
                     text=True,
