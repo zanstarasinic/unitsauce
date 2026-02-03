@@ -46,6 +46,8 @@ def main():
     
     console.print(f"[yellow]Found {len(failures)} failing test(s)[/yellow]\n")
     changed_files = get_git_diff(args.path)
+    changed_files = [f for f in changed_files if f.endswith('.py')]
+
     
     for failure in failures:
         console.print(f"[red]FAILING:[/red] {failure['file']}::{failure['function']}")
