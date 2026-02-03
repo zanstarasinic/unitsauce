@@ -46,9 +46,7 @@ def main():
     
     console.print(f"[yellow]Found {len(failures)} failing test(s)[/yellow]\n")
     changed_files = get_git_diff(args.path)
-    print(changed_files)
     changed_files = [f for f in changed_files if f.endswith('.py')]
-    print(changed_files)
 
     
     for failure in failures:
@@ -63,11 +61,16 @@ def main():
         elif args.output == 'markdown':
             markdown_output += format_result(result, 'markdown') + "\n"
 
-    pr = check_if_pull_request()
+    pr_context = check_if_pull_request()
+    print(f"PR context: {pr_context}")
 
-    if pr:
+    if pr_context:
         comment = format_pr_comment_summary(results)
-        post_pr_comment(pr['repo'], pr['number'], comment)
+        print(f"Posting comment to PR #{pr_context['number']}")
+        success = post_pr_comment(pr_context['repo'], pr_context['number'], comment)
+        print(f"Comment posted: {success}")
+    else:
+        print("Not a PR, skipping comment")
 
 
     if args.output == 'console':
