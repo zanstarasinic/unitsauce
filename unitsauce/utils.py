@@ -7,9 +7,11 @@ console = Console()
 
 def print_header():
     text = art.text2art("UnitSauce")
-    console.print(f"[bold blue] {text} [/bold blue]")
 
-    console.print("[dim]AI-powered test fixer[/dim]\n")
+    print("```")
+    print(text.rstrip())
+    print("```")
+    print("*AI-powered test fixer*")
 
 def backup_file(file_path):
     src = Path(file_path)

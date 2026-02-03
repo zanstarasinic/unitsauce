@@ -69,7 +69,11 @@ def apply_fix(file_path, generated_code):
 def verify_fix(ctx: VerifyContext):
     test_passed, new_changes_result = run_single_test(ctx.repo_path, ctx.test_file, ctx.test_function)
     if test_passed:
-        diff = show_diff(ctx.original_function_code, ctx.generated_code, ctx.test_function)
+        if ctx.fix_type == "code":
+            diff = show_diff(ctx.original_function_code, ctx.generated_code, ctx.test_function)
+        else:
+            diff = show_diff(ctx.test_code, ctx.generated_code, ctx.test_function)
+
         result = run_tests(ctx.repo_path)
         if result.returncode == 0:
             ctx.backup_path.unlink()
@@ -106,15 +110,17 @@ def fix(ctx: FixContext):
             repo_path=ctx.repo_path,
             file_path=ctx.file_path,
             test_file=ctx.test_file,
+            test_code=ctx.test_code,
             test_function=ctx.test_function,
             original_function_code=ctx.function_code,
             generated_code=generated_code,
             backup_path=successful_fix["backup"],
             original_error_message=ctx.error_message,
+            fix_type=ctx.fix_type
         )
         return verify_fix(verify_ctx)
 
-def try_fix_test(failure, test_file_path, test_code, source_file, source_code, path):
+def try_fix_test(failure, test_file_path, test_code, source_file, source_code, path, fix_type):
     """Attempt to fix the test file."""
     context = FixContext(
         prompt=fix_test_prompt,
@@ -125,12 +131,13 @@ def try_fix_test(failure, test_file_path, test_code, source_file, source_code, p
         error_message=failure['error'],
         repo_path=path,
         test_file=failure['file'],
-        test_function=failure['function']
+        test_function=failure['function'],
+        fix_type=fix_type
     )
     return fix(context)
 
 
-def try_fix_code(failure, test_code, source_file, source_code, path):
+def try_fix_code(failure, test_code, source_file, source_code, path, fix_type):
     """Attempt to fix the source code."""
     context = FixContext(
         prompt=fix_code_prompt,
@@ -141,7 +148,8 @@ def try_fix_code(failure, test_code, source_file, source_code, path):
         error_message=failure['error'],
         repo_path=path,
         test_file=failure['file'],
-        test_function=failure['function']
+        test_function=failure['function'],
+        fix_type=fix_type
     )
     return fix(context)
 
@@ -161,7 +169,7 @@ def attempt_fix(failure, changed_files, path, mode):
             continue
         
         if mode == 'test':
-            result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path)
+            result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path, mode)
             if result["fixed"]:
                 return FixResult(
                     test_file=failure['file'],
@@ -174,7 +182,7 @@ def attempt_fix(failure, changed_files, path, mode):
                 )
                 
         elif mode == 'code':
-            result = try_fix_code(failure, test_file_path, test_code, source_path, source_code, path)
+            result = try_fix_code(failure, test_file_path, test_code, source_path, source_code, path, mode)
             if result["fixed"]:
                 return FixResult(
                     test_file=failure['file'],
@@ -187,7 +195,7 @@ def attempt_fix(failure, changed_files, path, mode):
                 )
                 
         elif mode == 'auto':
-            result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path)
+            result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path, mode)
             if result["fixed"]:
                 return FixResult(
                     test_file=failure['file'],

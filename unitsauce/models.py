@@ -22,6 +22,7 @@ class FixContext:
 
     # --- Repo / execution ---
     repo_path: Path
+    fix_type: str
 
 
 @dataclass(frozen=True)
@@ -29,10 +30,12 @@ class VerifyContext:
     # --- Repo / execution ---
     repo_path: Path
     file_path: Path
+    fix_type: str
 
     # --- Test ---
     test_file: Path
     test_function: str
+    test_code: str
 
     # --- Code ---
     original_function_code: str

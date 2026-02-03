@@ -162,6 +162,7 @@ def run_tests(path):
                     capture_output=True,
                     text=True
                 )
+            console.print()
             return result
 
 def run_single_test(path, test_file, test_function):
