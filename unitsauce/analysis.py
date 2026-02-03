@@ -23,6 +23,8 @@ def show_diff(original, new, file_name):
     if diff_text:
         syntax = Syntax(diff_text, "diff", theme="monokai", line_numbers=True)
         console.print(Panel(syntax, title="Changes", border_style="green"))
+    
+    return diff_text
 
 def changed_lines(diff):
     lines = []

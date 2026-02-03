@@ -5,7 +5,7 @@ from .analysis import gather_context, get_single_file_diff, index_file_functions
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
-from .models import FixContext, VerifyContext
+from .models import FixContext, FixResult, VerifyContext
 from .prompts import fix_code_prompt, fix_test_prompt
 from rich.spinner import Spinner
 from rich.live import Live
@@ -69,13 +69,13 @@ def apply_fix(file_path, generated_code):
 def verify_fix(ctx: VerifyContext):
     test_passed, new_changes_result = run_single_test(ctx.repo_path, ctx.test_file, ctx.test_function)
     if test_passed:
-        show_diff(ctx.original_function_code, ctx.generated_code, ctx.test_function)
+        diff = show_diff(ctx.original_function_code, ctx.generated_code, ctx.test_function)
         result = run_tests(ctx.repo_path)
         if result.returncode == 0:
             ctx.backup_path.unlink()
-            return True
+            return {"fixed": True, "diff": diff}
         else:
-            return False
+            return {"fixed": False, "diff": ""}
     else:
         if new_changes_result == ctx.original_error_message:
             shutil.copy2(ctx.backup_path, ctx.file_path)
@@ -85,7 +85,7 @@ def verify_fix(ctx: VerifyContext):
         else:
             ctx.backup_path.unlink()
             console.print("[yellow]Different error now - keeping changes[/yellow]")
-        return False
+        return {"fixed": False, "diff": ""}
 
 def fix(ctx: FixContext):
     diff = get_single_file_diff(ctx.repo_path, ctx.function_name)
@@ -161,15 +161,50 @@ def attempt_fix(failure, changed_files, path, mode):
             continue
         
         if mode == 'test':
-            if try_fix_test(failure, test_file_path, test_code, source_path, source_code, path):
-                return True
+            result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path)
+            if result["fixed"]:
+                return FixResult(
+                    test_file=failure['file'],
+                    test_function=failure['function'],
+                    error_message=failure['error'],
+                    fixed=result["fixed"],
+                    fix_type='test',
+                    file_changed=str(test_file_path),
+                    diff=result["diff"]
+                )
                 
         elif mode == 'code':
-            if try_fix_code(failure, test_file_path, test_code, source_path, source_code, path):
-                return True
+            result = try_fix_code(failure, test_file_path, test_code, source_path, source_code, path)
+            if result["fixed"]:
+                return FixResult(
+                    test_file=failure['file'],
+                    test_function=failure['function'],
+                    error_message=failure['error'],
+                    fixed=result["fixed"],
+                    fix_type='test',
+                    file_changed=str(test_file_path),
+                    diff=result["diff"]
+                )
                 
         elif mode == 'auto':
-            if try_fix_test(failure, test_file_path, test_code, source_path, source_code, path):
-                return True
+            result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path)
+            if result["fixed"]:
+                return FixResult(
+                    test_file=failure['file'],
+                    test_function=failure['function'],
+                    error_message=failure['error'],
+                    fixed=result["fixed"],
+                    fix_type='test',
+                    file_changed=str(test_file_path),
+                    diff=result["diff"]
+                )
     
-    return False
+    return FixResult(
+                    test_file=failure['file'],
+                    test_function=failure['function'],
+                    error_message=failure['error'],
+                    fixed=False,
+                    fix_type='auto',
+                    file_changed=str(test_file_path),
+                    diff=""
+                )
