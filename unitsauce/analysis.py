@@ -71,6 +71,8 @@ def get_git_diff(path):
                     text=True,
                     check=True
                 )
+    changed_files = [f for f in changed_files if f.endswith('.py')]
+
 
     return changed_files.stdout.splitlines()
 

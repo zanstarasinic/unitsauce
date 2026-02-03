@@ -29,6 +29,7 @@ def call_llm(fix_prompt, functions, test_code, error_message, diff):
                         ],
                         model="claude-opus-4-5-20251101",
                     )
+    console.print()
     code = response.content[0].text
     match = re.search(r'```python(.*?)```', code, re.DOTALL)
 

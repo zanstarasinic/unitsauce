@@ -2,6 +2,7 @@
 import argparse
 import sys
 from dotenv import load_dotenv
+from unitsauce.github import check_if_pull_request, format_pr_comment, format_pr_comment_summary, post_pr_comment
 from unitsauce.output import format_result, format_summary
 
 from .fixer import attempt_fix
@@ -57,6 +58,13 @@ def main():
             format_result(result, 'console')
         elif args.output == 'markdown':
             markdown_output += format_result(result, 'markdown') + "\n"
+
+    pr = check_if_pull_request()
+
+    if pr:
+        comment = format_pr_comment_summary(results)
+        post_pr_comment(pr['repo'], pr['number'], comment)
+
 
     if args.output == 'console':
         format_summary(results, 'console')
