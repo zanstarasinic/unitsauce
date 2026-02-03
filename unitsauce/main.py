@@ -61,16 +61,11 @@ def main():
         elif args.output == 'markdown':
             markdown_output += format_result(result, 'markdown') + "\n"
 
-    pr_context = check_if_pull_request()
-    print(f"PR context: {pr_context}")
+    pr = check_if_pull_request()
 
-    if pr_context:
+    if pr:
         comment = format_pr_comment_summary(results)
-        print(f"Posting comment to PR #{pr_context['number']}")
-        success = post_pr_comment(pr_context['repo'], pr_context['number'], comment)
-        print(f"Comment posted: {success}")
-    else:
-        print("Not a PR, skipping comment")
+        post_pr_comment(pr['repo'], pr['number'], comment)
 
 
     if args.output == 'console':

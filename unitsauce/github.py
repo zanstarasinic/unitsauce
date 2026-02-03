@@ -27,11 +27,10 @@ def check_if_pull_request():
 
 
 def post_pr_comment(repo, pr_number, body):
-    """Post a comment to a PR. Returns True if successful."""
-
     token = os.getenv("GITHUB_TOKEN")
     
     if not token:
+        print("No GITHUB_TOKEN found")
         return False
     
     url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
@@ -40,8 +39,13 @@ def post_pr_comment(repo, pr_number, body):
         "Accept": "application/vnd.github+json"
     }
     
-    # Use requests or httpx
     response = httpx.post(url, json={"body": body}, headers=headers)
+    token = os.getenv("GITHUB_TOKEN")
+    print(f"Token exists: {token is not None}")
+    print(f"Token length: {len(token) if token else 0}")
+    print(f"Response status: {response.status_code}")
+    print(f"Response body: {response.text}")
+    
     return response.status_code == 201
 
 
