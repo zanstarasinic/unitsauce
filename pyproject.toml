@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "unitsauce"
-version = "0.1.0"
+version = "0.1.1"
 description = "AI-powered test failure analysis and fix suggestions"
 readme = "README.md"
 requires-python = ">=3.10"

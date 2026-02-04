@@ -3,8 +3,10 @@ pyproject.toml
 unitsauce/__init__.py
 unitsauce/analysis.py
 unitsauce/fixer.py
+unitsauce/github.py
 unitsauce/main.py
 unitsauce/models.py
+unitsauce/output.py
 unitsauce/prompts.py
 unitsauce/utils.py
 unitsauce.egg-info/PKG-INFO

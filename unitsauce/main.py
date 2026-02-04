@@ -76,7 +76,8 @@ def main():
     elif args.output == 'json':
         print(format_summary(results, 'json'))
         
-
+    all_fixed = all(r.fixed for r in results)
+    sys.exit(0 if all_fixed else 1)
 
 if __name__ == "__main__":
     main()
