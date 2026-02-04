@@ -75,12 +75,7 @@ def verify_fix(ctx: VerifyContext):
         else:
             diff = show_diff(ctx.test_code, ctx.generated_code, ctx.test_function)
 
-        result = run_tests(ctx.repo_path)
-        if result.returncode == 0:
-            ctx.backup_path.unlink()
-            return {"fixed": True, "diff": diff}
-        else:
-            return {"fixed": False, "diff": ""}
+        return {"fixed": True, "diff": diff}
     else:
         if new_changes_result == ctx.original_error_message:
             shutil.copy2(ctx.backup_path, ctx.file_path)

@@ -60,6 +60,15 @@ def main():
             format_result(result, 'console')
         elif args.output == 'markdown':
             markdown_output += format_result(result, 'markdown') + "\n"
+    final_result = run_tests(args.path)
+    all_tests_pass = final_result.returncode == 0
+    
+    if args.output == 'console':
+        format_summary(results, 'console')
+        if all_tests_pass:
+            console.print("[green]All tests now pass![/green]")
+        else:
+            console.print("[yellow]Some tests still failing[/yellow]")
 
     pr = check_if_pull_request()
 
@@ -76,8 +85,8 @@ def main():
     elif args.output == 'json':
         print(format_summary(results, 'json'))
         
-    all_fixed = all(r.fixed for r in results)
-    sys.exit(0 if all_fixed else 1)
+    sys.exit(0 if all_tests_pass else 1)
+
 
 if __name__ == "__main__":
     main()
