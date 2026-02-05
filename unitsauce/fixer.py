@@ -59,7 +59,7 @@ def apply_fix(file_path, generated_code):
 
                 file_path.write_text("\n".join(lines))
         file_after = file_path.read_text()
-        diff_string = get_single_file_diff(source, file_after)
+        diff_string = show_diff(source, file_after, file_path)
         return {"success": True, "backup": backup, "diff": diff_string}
         
     except SyntaxError as e:
