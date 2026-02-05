@@ -58,24 +58,25 @@ def apply_fix(file_path, generated_code):
                 lines[start:end] = raw_text.splitlines()
 
                 file_path.write_text("\n".join(lines))
-
-        return {"success": True, "backup": backup}
+        file_after = file_path.read_text()
+        diff_string = get_single_file_diff(source, file_after)
+        return {"success": True, "backup": backup, "diff": diff_string}
         
     except SyntaxError as e:
         console.print(f"[red]Claude returned invalid code: {e}[/red]")
         shutil.copy2(backup, file_path)
         backup.unlink()
-        return {"success": False, "backup": None}
+        return {"success": False, "backup": None, "diff": None}
 
 def verify_fix(ctx: VerifyContext):
     test_passed, new_changes_result = run_single_test(ctx.repo_path, ctx.test_file, ctx.test_function)
     if test_passed:
-        if ctx.fix_type == "code":
-            diff = show_diff(ctx.original_function_code, ctx.generated_code, ctx.test_function)
-        else:
-            diff = show_diff(ctx.test_code, ctx.generated_code, ctx.test_function)
+        # if ctx.fix_type == "code":
+        #     diff = show_diff(ctx.original_function_code, ctx.generated_code, ctx.test_function)
+        # else:
+        #     diff = show_diff(ctx.test_code, ctx.generated_code, ctx.test_function)
 
-        return {"fixed": True, "diff": diff}
+        return {"fixed": True, "diff": ctx.diff}
     else:
         if new_changes_result == ctx.original_error_message:
             shutil.copy2(ctx.backup_path, ctx.file_path)
@@ -112,7 +113,8 @@ def fix(ctx: FixContext):
             generated_code=generated_code,
             backup_path=successful_fix["backup"],
             original_error_message=ctx.error_message,
-            fix_type=ctx.fix_type
+            fix_type=ctx.fix_type,
+            diff=successful_fix["diff"]
         )
         return verify_fix(verify_ctx)
 

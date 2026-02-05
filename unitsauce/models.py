@@ -31,6 +31,7 @@ class VerifyContext:
     repo_path: Path
     file_path: Path
     fix_type: str
+    diff: str
 
     # --- Test ---
     test_file: Path
