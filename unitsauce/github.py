@@ -1,6 +1,6 @@
 import json
 import os
-
+from .utils import console
 import httpx
 
 def check_if_pull_request():
@@ -40,51 +40,90 @@ def post_pr_comment(repo, pr_number, body):
         "Accept": "application/vnd.github+json"
     }
     
-    # Use requests or httpx
     response = httpx.post(url, json={"body": body}, headers=headers)
-    return response.status_code == 201
-
-
-def format_pr_comment(result):
-    """Format fix result as PR comment markdown."""
-    
-    if result.fixed:
-        status = "✅ Fixed"
+    if response.status_code == httpx.codes.ok:
+        console.print("Comment posted successfully\n")
     else:
-        status = "❌ Could not fix"
+        console.print(response.raise_for_status())
+
+
+
+def get_confidence_badge(confidence: str) -> str:
+    badges = {
+        "high": "🟢",
+        "medium": "🟡",
+        "low": "🔴"
+    }
+    return badges.get(confidence, "⚪")
+
+
+def get_confidence_label(confidence: str) -> str:
+    return confidence.capitalize() if confidence else "Unknown"
+
+
+def format_diff_section(diff: str, line_threshold: int = 20) -> str:
+    if not diff:
+        return ""
     
-    comment = f"## {status}: `{result.test_file}::{result.test_function}`\n\n"
-    comment += f"**Error:** `{result.error_message[:100]}`\n\n"
+    line_count = len(diff.splitlines())
     
-    if result.fixed:
-        comment += f"**Fixed by:** Updating `{result.fix_type}` in `{result.file_changed}`\n\n"
-        comment += f"**Apply this change:**\n\n"
-        comment += f"```python\n{result.generated_code}\n```\n"
+    if line_count > line_threshold:
+        return f"""<details>
+<summary>View diff ({line_count} lines)</summary>
+```diff
+{diff}
+```
+
+</details>"""
     
-    return comment
+    return f"```diff\n{diff}\n```"
 
 
 def format_pr_comment_summary(results):
-    """Format all fix results as a single PR comment."""
-    
     total = len(results)
     fixed = sum(1 for r in results if r.fixed)
+    partial = sum(1 for r in results if r.partial)
     
-    # Header
     comment = "## 🔧 UnitSauce Analysis\n\n"
-    comment += f"Found **{total}** failing test(s), fixed **{fixed}**.\n\n"
-    comment += "---\n\n"
+    comment += f"Found **{total}** failing test(s)"
     
-    # Each result
+    if fixed > 0:
+        comment += f", fixed **{fixed}**"
+    if partial > 0:
+        comment += f", partially fixed **{partial}**"
+    
+    comment += ".\n\n---\n\n"
+    
     for result in results:
+        badge = get_confidence_badge(result.confidence)
+        confidence_label = get_confidence_label(result.confidence)
+        
         if result.fixed:
-            comment += f"### ✅ `{result.test_file}::{result.test_function}`\n\n"
-            comment += f"**Error:** `{result.error_message[:100]}`\n\n"
-            comment += f"**Fixed by:** Updating `{result.fix_type}` in `{result.file_changed}`\n\n"
-            comment += f"```diff\n{result.diff}\n```\n\n"
+            # Fully fixed
+            comment += f"### {badge} ✅ `{result.test_file}::{result.test_function}`\n\n"
+            comment += f"**Why it failed:** {result.cause}\n\n"
+            comment += f"**Confidence:** {confidence_label}\n\n"
+            
+            fix_label = "Suggested fix" if result.confidence != "low" else "Possible fix (low confidence)"
+            comment += f"**{fix_label}** ({result.fix_type}):\n\n"
+            comment += format_diff_section(result.diff)
+            comment += "\n\n"
+        
+        elif result.partial:
+            # Partial fix
+            comment += f"### {badge} ⚠️ `{result.test_file}::{result.test_function}`\n\n"
+            comment += f"**Why it failed:** {result.cause}\n\n"
+            comment += f"**Confidence:** {confidence_label}\n\n"
+            comment += f"**Partial fix applied** - original error resolved but new error occurred:\n\n"
+            comment += f"`{result.new_error[:150] if result.new_error else 'Unknown error'}`\n\n"
+            comment += format_diff_section(result.diff)
+            comment += "\n\n"
+        
         else:
-            comment += f"### ❌ `{result.test_file}::{result.test_function}`\n\n"
-            comment += f"**Error:** `{result.error_message[:100]}`\n\n"
+            # Not fixed
+            comment += f"### {badge} ❌ `{result.test_file}::{result.test_function}`\n\n"
+            comment += f"**Why it failed:** {result.cause}\n\n"
+            comment += f"**Confidence:** {confidence_label}\n\n"
             comment += "Could not auto-fix this failure.\n\n"
         
         comment += "---\n\n"

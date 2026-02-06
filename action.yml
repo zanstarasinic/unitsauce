@@ -15,9 +15,9 @@ inputs:
     required: false
     default: 'auto'
 
-  outputs:
-    result:
-      description: 'JSON result of fix attempts'
+outputs:
+  result:
+    description: 'JSON result of fix attempts'
 
 runs:
   using: 'composite'

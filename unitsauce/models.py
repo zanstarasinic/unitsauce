@@ -24,36 +24,23 @@ class FixContext:
     repo_path: Path
     fix_type: str
 
-
-@dataclass(frozen=True)
-class VerifyContext:
-    # --- Repo / execution ---
-    repo_path: Path
-    file_path: Path
-    fix_type: str
-    diff: str
-
-    # --- Test ---
-    test_file: Path
-    test_function: str
-    test_code: str
-
-    # --- Code ---
-    original_function_code: str
-    generated_code: str
-    backup_path: Path
-
-    # --- Failure ---
-    original_error_message: Optional[str] = None
+@dataclass
+class Diagnosis:
+    cause: str
+    fix_location: str
+    confidence: str
 
 @dataclass
 class FixResult:
     test_file: str
     test_function: str
-
     error_message: str
     fixed: bool
     fix_type: str
-    
     diff: str
     file_changed: str
+    partial: bool = False
+    new_error: str | None = None
+    cause: str = ""
+    confidence: str = "low"
+

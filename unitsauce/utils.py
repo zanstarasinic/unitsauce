@@ -1,5 +1,5 @@
-from pathlib import Path
-import shutil
+import json
+import re
 import art
 from rich.console import Console
 
@@ -13,13 +13,17 @@ def print_header():
     print("```")
     print("*AI-powered test fixer*")
 
-def backup_file(file_path):
-    src = Path(file_path)
 
-    if not src.exists():
-        raise FileNotFoundError(src)
+def parse_json(text: str):
+    text = re.sub(r"```(?:json)?|```", "", text).strip()
 
-    backup = src.with_suffix(src.suffix + ".bak")
-    shutil.copy2(src, backup)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
 
-    return backup
+    match = re.search(r"(\{.*\}|\[.*\])", text, re.DOTALL)
+    if not match:
+        raise ValueError("No JSON found")
+
+    return json.loads(match.group(1))
