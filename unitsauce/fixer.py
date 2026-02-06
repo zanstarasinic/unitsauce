@@ -1,12 +1,6 @@
-import os
-import re
-import shutil
-
 from unitsauce.llm import call_llm, diagnose
 from .analysis import gather_context, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw
-
-
-from .models import FixContext, FixResult, VerifyContext
+from .models import FixContext, FixResult
 from .prompts import fix_code_prompt, fix_test_prompt
 
 from .utils import console
