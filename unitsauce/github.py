@@ -65,9 +65,18 @@ def format_diff_section(diff: str, line_threshold: int = 20) -> str:
     if not diff:
         return ""
     
+    # Strip any existing code block markers if present
+    diff = diff.strip()
+    if diff.startswith("```"):
+        diff = diff.split("\n", 1)[1]  # Remove first line
+    if diff.endswith("```"):
+        diff = diff.rsplit("\n", 1)[0]  # Remove last line
+    diff = diff.strip()
+    
     line_count = len(diff.splitlines())
     
     if line_count > line_threshold:
+        # Critical: blank line after </summary> and before ```
         return f"""<details>
 <summary>View diff ({line_count} lines)</summary>
 ```diff
@@ -99,7 +108,6 @@ def format_pr_comment_summary(results):
         confidence_label = get_confidence_label(result.confidence)
         
         if result.fixed:
-            # Fully fixed
             comment += f"### {badge} ✅ `{result.test_file}::{result.test_function}`\n\n"
             comment += f"**Why it failed:** {result.cause}\n\n"
             comment += f"**Confidence:** {confidence_label}\n\n"
@@ -107,25 +115,22 @@ def format_pr_comment_summary(results):
             fix_label = "Suggested fix" if result.confidence != "low" else "Possible fix (low confidence)"
             comment += f"**{fix_label}** ({result.fix_type}):\n\n"
             comment += format_diff_section(result.diff)
-            comment += "\n\n"
+            comment += "\n\n---\n\n"
         
         elif result.partial:
-            # Partial fix
             comment += f"### {badge} ⚠️ `{result.test_file}::{result.test_function}`\n\n"
             comment += f"**Why it failed:** {result.cause}\n\n"
             comment += f"**Confidence:** {confidence_label}\n\n"
-            comment += f"**Partial fix applied** - original error resolved but new error occurred:\n\n"
+            comment += "**Partial fix applied** - original error resolved but new error occurred:\n\n"
             comment += f"`{result.new_error[:150] if result.new_error else 'Unknown error'}`\n\n"
             comment += format_diff_section(result.diff)
-            comment += "\n\n"
+            comment += "\n\n---\n\n"
         
         else:
-            # Not fixed
             comment += f"### {badge} ❌ `{result.test_file}::{result.test_function}`\n\n"
             comment += f"**Why it failed:** {result.cause}\n\n"
             comment += f"**Confidence:** {confidence_label}\n\n"
             comment += "Could not auto-fix this failure.\n\n"
-        
-        comment += "---\n\n"
+            comment += "---\n\n"
     
     return comment
