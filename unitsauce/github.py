@@ -61,29 +61,21 @@ def get_confidence_label(confidence: str) -> str:
     return confidence.capitalize() if confidence else "Unknown"
 
 
-def format_diff_section(diff: str, line_threshold: int = 20) -> str:
+def format_diff_section(diff: str) -> str:
     if not diff:
         return ""
     
-    # Strip any existing code block markers if present
     diff = diff.strip()
+    
+    # Remove existing code block markers if present
     if diff.startswith("```"):
-        diff = diff.split("\n", 1)[1]  # Remove first line
+        lines = diff.split("\n")
+        diff = "\n".join(lines[1:])  # Remove first line
     if diff.endswith("```"):
-        diff = diff.rsplit("\n", 1)[0]  # Remove last line
+        lines = diff.split("\n")
+        diff = "\n".join(lines[:-1])  # Remove last line
+    
     diff = diff.strip()
-    
-    line_count = len(diff.splitlines())
-    
-    if line_count > line_threshold:
-        # Critical: blank line after </summary> and before ```
-        return f"""<details>
-<summary>View diff ({line_count} lines)</summary>
-```diff
-{diff}
-```
-
-</details>"""
     
     return f"```diff\n{diff}\n```"
 
@@ -106,11 +98,13 @@ def format_pr_comment_summary(results):
     for result in results:
         badge = get_confidence_badge(result.confidence)
         confidence_label = get_confidence_label(result.confidence)
+        cause_text = result.cause if result.cause else "Unknown"
         
         if result.fixed:
-            comment += f"### {badge} ✅ `{result.test_file}::{result.test_function}`\n\n"
-            comment += f"**Why it failed:** {result.cause}\n\n"
-            comment += f"**Confidence:** {confidence_label}\n\n"
+            comment += f"### ✅ `{result.test_file}::{result.test_function}`\n\n"
+            comment += f"**Error:** `{result.error_message[:150]}`\n\n"
+            comment += f"**Why it failed:** {cause_text}\n\n"
+            comment += f"**Confidence:** {confidence_label} {badge}\n\n"
             
             fix_label = "Suggested fix" if result.confidence != "low" else "Possible fix (low confidence)"
             comment += f"**{fix_label}** ({result.fix_type}):\n\n"
@@ -118,19 +112,20 @@ def format_pr_comment_summary(results):
             comment += "\n\n---\n\n"
         
         elif result.partial:
-            comment += f"### {badge} ⚠️ `{result.test_file}::{result.test_function}`\n\n"
-            comment += f"**Why it failed:** {result.cause}\n\n"
-            comment += f"**Confidence:** {confidence_label}\n\n"
+            comment += f"### ⚠️ `{result.test_file}::{result.test_function}`\n\n"
+            comment += f"**Error:** `{result.error_message[:150]}`\n\n"
+            comment += f"**Why it failed:** {cause_text}\n\n"
+            comment += f"**Confidence:** {confidence_label} {badge}\n\n"
             comment += "**Partial fix applied** - original error resolved but new error occurred:\n\n"
             comment += f"`{result.new_error[:150] if result.new_error else 'Unknown error'}`\n\n"
             comment += format_diff_section(result.diff)
             comment += "\n\n---\n\n"
         
         else:
-            comment += f"### {badge} ❌ `{result.test_file}::{result.test_function}`\n\n"
-            comment += f"**Why it failed:** {result.cause}\n\n"
-            comment += f"**Confidence:** {confidence_label}\n\n"
-            comment += "Could not auto-fix this failure.\n\n"
-            comment += "---\n\n"
+            comment += f"### ❌ `{result.test_file}::{result.test_function}`\n\n"
+            comment += f"**Error:** `{result.error_message[:150]}`\n\n"
+            comment += f"**Why it failed:** {cause_text}\n\n"
+            comment += f"**Confidence:** {confidence_label} {badge}\n\n"
+            comment += "Could not auto-fix this failure.\n\n---\n\n"
     
     return comment
