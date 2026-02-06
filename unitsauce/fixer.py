@@ -34,13 +34,11 @@ def apply_fix(file_path, generated_code):
         return {"success": False, "diff": None}
 
 def fix(ctx: FixContext, max_attempts = 2):
-    diff = get_single_file_diff(ctx.repo_path, ctx.function_name) 
-    affected = gather_context(diff, ctx.function_code)
 
     previous_error = None
 
     for attempt in range(max_attempts):
-        llm_result = call_llm(ctx.prompt, affected, ctx.test_code, ctx.error_message, diff, previous_error)
+        llm_result = call_llm(ctx.prompt, ctx.affected, ctx.test_code, ctx.error_message, ctx.diff, previous_error)
 
         if llm_result["code"] is None:
             console.print("[red]LLM returned no code block[/red]")
@@ -69,7 +67,7 @@ def fix(ctx: FixContext, max_attempts = 2):
     
     return {"fixed": False, "diff": "", "new_error": ""}
 
-def try_fix_test(failure, test_file_path, test_code, source_file, source_code, path, fix_type):
+def try_fix_test(failure, test_file_path, test_code, source_file, source_code, path, fix_type, diff, affected_functions):
     """Attempt to fix the test file."""
     context = FixContext(
         prompt=fix_test_prompt,
@@ -81,12 +79,14 @@ def try_fix_test(failure, test_file_path, test_code, source_file, source_code, p
         repo_path=path,
         test_file=failure['file'],
         test_function=failure['function'],
-        fix_type=fix_type
+        fix_type=fix_type,
+        diff=diff,
+        affected=affected_functions
     )
     return fix(context)
 
 
-def try_fix_code(failure, test_code, source_file, source_code, path, fix_type):
+def try_fix_code(failure, test_code, source_file, source_code, path, fix_type, diff, affected_functions):
     """Attempt to fix the source code."""
     context = FixContext(
         prompt=fix_code_prompt,
@@ -98,7 +98,9 @@ def try_fix_code(failure, test_code, source_file, source_code, path, fix_type):
         repo_path=path,
         test_file=failure['file'],
         test_function=failure['function'],
-        fix_type=fix_type
+        fix_type=fix_type,
+        diff=diff,
+        affected=affected_functions
     )
     return fix(context)
 
@@ -117,9 +119,17 @@ def attempt_fix(failure, changed_files, path, mode):
         if not source_path:
             continue
 
-        diagnosis = diagnose()
+        diff = get_single_file_diff(path, source_file)
+        affected = gather_context(diff, source_code)
+        
+        diagnosis = diagnose(
+            functions=affected,
+            test_code=test_code,
+            error_message=failure['error'],
+            diff=diff
+        )
         if mode == 'test':
-            result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path, mode)
+            result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path, mode, diff, affected)
             if result["fixed"]:
                 return FixResult(
                     test_file=failure['file'],

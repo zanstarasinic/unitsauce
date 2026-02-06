@@ -24,6 +24,9 @@ class FixContext:
     repo_path: Path
     fix_type: str
 
+    diff: str = ""
+    affected: list = None
+
 @dataclass
 class Diagnosis:
     cause: str
