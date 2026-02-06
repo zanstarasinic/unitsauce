@@ -67,7 +67,7 @@ def fix(ctx: FixContext, max_attempts = 2):
     
     return {"fixed": False, "diff": "", "new_error": ""}
 
-def try_fix_test(failure, test_file_path, test_code, source_file, source_code, path, fix_type, diff, affected_functions):
+def try_fix_test(failure, test_file_path, test_code, source_code, path, fix_type, diff, affected_functions):
     """Attempt to fix the test file."""
     context = FixContext(
         prompt=fix_test_prompt,
@@ -149,7 +149,7 @@ def attempt_fix(failure, changed_files, path, mode):
 
                 
         elif mode == 'code':
-            result = try_fix_code(failure, test_file_path, test_code, source_path, source_code, path, mode, diff, affected)
+            result = try_fix_code(failure, test_code, source_path, source_code, path, mode, diff, affected)
             if result["fixed"]:
                 return FixResult(
                     test_file=failure['file'],
@@ -165,7 +165,7 @@ def attempt_fix(failure, changed_files, path, mode):
             if diagnosis.fix_location == "test":
                 result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path, mode, diff, affected)
             else:
-                result = try_fix_code(failure, test_file_path, test_code, source_path, source_code, path, mode, diff, affected)
+                result = try_fix_code(failure, test_code, source_path, source_code, path, mode, diff, affected)
 
             if result["fixed"]:
                 return FixResult(
