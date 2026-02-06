@@ -124,7 +124,7 @@ def attempt_fix(failure, changed_files, path, mode):
         
         diagnosis = diagnose(
             functions=affected,
-            test_code=test_code,
+            test_code=test_code,    
             error_message=failure['error'],
             diff=diff
         )
@@ -162,7 +162,7 @@ def attempt_fix(failure, changed_files, path, mode):
                 )
                 
         elif mode == 'auto':
-            if diagnosis.fix_locaction == "test":
+            if diagnosis.fix_location == "test":
                 result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path, mode)
             else:
                 result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path, mode)
