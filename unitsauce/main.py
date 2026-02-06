@@ -2,11 +2,11 @@
 import argparse
 import sys
 from dotenv import load_dotenv
-from unitsauce.github import check_if_pull_request, format_pr_comment, format_pr_comment_summary, post_pr_comment
+from unitsauce.github import check_if_pull_request, format_pr_comment_summary, post_pr_comment
 from unitsauce.output import format_result, format_summary
 
 from .fixer import attempt_fix
-from .analysis import get_failing_tests, get_git_diff, read_file_content, run_tests
+from .analysis import get_failing_tests, get_git_diff, run_tests
 from .utils import print_header, console
 
 
