@@ -49,7 +49,7 @@ def fix(ctx: FixContext, max_attempts = 2):
         
         result = try_fix_temporarily(
             file_path=ctx.file_path,
-            generated_code=llm_result,
+            generated_code=llm_result["code"],
             test_file=ctx.test_file,
             test_function=ctx.test_function,
             repo_path=ctx.repo_path,
