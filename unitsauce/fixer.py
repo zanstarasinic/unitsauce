@@ -149,7 +149,7 @@ def attempt_fix(failure, changed_files, path, mode):
 
                 
         elif mode == 'code':
-            result = try_fix_code(failure, test_file_path, test_code, source_path, source_code, path, mode)
+            result = try_fix_code(failure, test_file_path, test_code, source_path, source_code, path, mode, diff, affected)
             if result["fixed"]:
                 return FixResult(
                     test_file=failure['file'],
@@ -163,9 +163,9 @@ def attempt_fix(failure, changed_files, path, mode):
                 
         elif mode == 'auto':
             if diagnosis.fix_location == "test":
-                result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path, mode)
+                result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path, mode, diff, affected)
             else:
-                result = try_fix_test(failure, test_file_path, test_code, source_path, source_code, path, mode)
+                result = try_fix_code(failure, test_file_path, test_code, source_path, source_code, path, mode, diff, affected)
 
             if result["fixed"]:
                 return FixResult(
