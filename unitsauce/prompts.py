@@ -108,5 +108,5 @@ Determine:
 
 Respond with ONLY this JSON object, no other text:
 
-{"cause": "one to two sentence explanation", "fix_location": "code" or "test", "confidence": "high" or "medium" or "low"}
+{{"cause": "one to two sentence explanation", "fix_location": "code" or "test", "confidence": "high" or "medium" or "low"}}
 """
