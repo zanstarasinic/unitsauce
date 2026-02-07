@@ -25,13 +25,11 @@ def apply_fix(file_path, generated_code):
                 lines[start:end] = raw_text.splitlines()
 
                 file_path.write_text("\n".join(lines))
-        file_after = file_path.read_text()
-        diff_string = show_diff(source, file_after, file_path)
-        return {"success": True, "diff": diff_string}
+        return True
         
     except SyntaxError as e:
         console.print(f"[red]Claude returned invalid code: {e}[/red]")
-        return {"success": False, "diff": None}
+        return False
 
 def fix(ctx: FixContext, max_attempts = 2):
 
@@ -140,8 +138,8 @@ def attempt_fix(failure, changed_files, path, mode):
                     file_changed=str(test_file_path),
                     diff=result["diff"],
                     new_error=result["new_error"],
-                    cause=diagnosis["cause"],
-                    confidence=diagnosis["confidence"]
+                    cause=diagnosis.cause,
+                    confidence=diagnosis.confidence
                 )
             elif result["new_error"]:
                 break
@@ -195,7 +193,7 @@ def try_fix_temporarily(file_path, generated_code, test_file, test_function, rep
     
     try:
         apply_result = apply_fix(file_path, generated_code)
-        if not apply_result["success"]:
+        if not apply_result:
             return {"fixed": False, "diff": "", "new_error": ""}
         
         new_content = file_path.read_text()

@@ -81,6 +81,7 @@ def format_diff_section(diff: str) -> str:
 
 
 def format_pr_comment_summary(results):
+    print(results)
     total = len(results)
     fixed = sum(1 for r in results if r.fixed)
     partial = sum(1 for r in results if r.partial)

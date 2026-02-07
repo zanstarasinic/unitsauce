@@ -54,6 +54,7 @@ def main():
         console.print(f"[red]ERROR:[/red] {failure['error']}\n")
         
         result = attempt_fix(failure, changed_files, args.path, args.mode)
+        print(result)
         results.append(result)
 
         if args.output == 'console':
