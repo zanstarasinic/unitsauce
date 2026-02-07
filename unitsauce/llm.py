@@ -30,7 +30,6 @@ def parse_llm_response(response_text):
         code = fix_match.group(1).strip()
         if not code:
             code = None
-    print(code)
     return {"explanation": explanation, "code": code}
 
 

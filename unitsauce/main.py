@@ -53,7 +53,6 @@ def main():
         console.print(f"[red]ERROR:[/red] {failure['error']}\n")
         
         result = attempt_fix(failure, changed_files, args.path, args.mode)
-        print(result)
         results.append(result)
 
         if args.output == 'console':
@@ -62,7 +61,6 @@ def main():
             markdown_output += format_result(result, 'markdown') + "\n"
     final_result = run_tests(args.path)
     all_tests_pass = final_result.returncode == 0
-    print(results)
     if args.output == 'console':
         format_summary(results, 'console')
         if all_tests_pass:
