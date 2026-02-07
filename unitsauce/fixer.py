@@ -126,6 +126,7 @@ def attempt_fix(failure, changed_files, path, mode):
             error_message=failure['error'],
             diff=diff
         )
+        print(diagnosis)
         if mode == 'test':
             result = try_fix_test(failure, test_file_path, test_code, source_code, path, mode, diff, affected)
             if result["fixed"]:

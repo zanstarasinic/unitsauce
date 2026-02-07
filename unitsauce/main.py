@@ -63,7 +63,7 @@ def main():
             markdown_output += format_result(result, 'markdown') + "\n"
     final_result = run_tests(args.path)
     all_tests_pass = final_result.returncode == 0
-    
+    print(results)
     if args.output == 'console':
         format_summary(results, 'console')
         if all_tests_pass:
