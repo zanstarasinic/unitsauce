@@ -126,6 +126,7 @@ def attempt_fix(failure, changed_files, path, mode):
             error_message=failure['error'],
             diff=diff
         )
+        print(mode)
         print(diagnosis)
         if mode == 'test':
             result = try_fix_test(failure, test_file_path, test_code, source_code, path, mode, diff, affected)
@@ -145,8 +146,6 @@ def attempt_fix(failure, changed_files, path, mode):
             elif result["new_error"]:
                 break
 
-
-                
         elif mode == 'code':
             result = try_fix_code(failure, test_code, source_path, source_code, path, mode, diff, affected)
             if result["fixed"]:
@@ -170,6 +169,7 @@ def attempt_fix(failure, changed_files, path, mode):
                 result = try_fix_code(failure, test_code, source_path, source_code, path, mode, diff, affected)
 
             if result["fixed"]:
+                print(result, diagnosis)
                 return FixResult(
                     test_file=failure['file'],
                     test_function=failure['function'],
@@ -183,18 +183,18 @@ def attempt_fix(failure, changed_files, path, mode):
                     confidence=diagnosis.confidence
                 )
     
-    return FixResult(
-                    test_file=failure['file'],
-                    test_function=failure['function'],
-                    error_message=failure['error'],
-                    fixed=False,
-                    fix_type='auto',
-                    file_changed=str(test_file_path),
-                    diff="",
-                    new_error=result["new_error"],
-                    cause=diagnosis.cause,
-                    confidence=diagnosis.confidence
-                )
+        return FixResult(
+                        test_file=failure['file'],
+                        test_function=failure['function'],
+                        error_message=failure['error'],
+                        fixed=False,
+                        fix_type='auto',
+                        file_changed=str(test_file_path),
+                        diff="",
+                        new_error=result["new_error"],
+                        cause=diagnosis.cause,
+                        confidence=diagnosis.confidence
+                    )
 
 def try_fix_temporarily(file_path, generated_code, test_file, test_function, repo_path, original_error):
     """Apply fix, test it, restore original, return result."""
