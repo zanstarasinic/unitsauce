@@ -157,7 +157,10 @@ def attempt_fix(failure, changed_files, path, mode):
                     fixed=result["fixed"],
                     fix_type='code',
                     file_changed=str(test_file_path),
-                    diff=result["diff"]
+                    diff=result["diff"],
+                    new_error=result["new_error"],
+                    cause=diagnosis.cause,
+                    confidence=diagnosis.confidence
                 )
                 
         elif mode == 'auto':
@@ -175,6 +178,9 @@ def attempt_fix(failure, changed_files, path, mode):
                     fix_type='test',
                     file_changed=str(test_file_path),
                     diff=result["diff"],
+                    new_error=result["new_error"],
+                    cause=diagnosis.cause,
+                    confidence=diagnosis.confidence
                 )
     
     return FixResult(
@@ -184,7 +190,10 @@ def attempt_fix(failure, changed_files, path, mode):
                     fixed=False,
                     fix_type='auto',
                     file_changed=str(test_file_path),
-                    diff=""
+                    diff="",
+                    new_error=result["new_error"],
+                    cause=diagnosis.cause,
+                    confidence=diagnosis.confidence
                 )
 
 def try_fix_temporarily(file_path, generated_code, test_file, test_function, repo_path, original_error):
