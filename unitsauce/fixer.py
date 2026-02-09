@@ -45,7 +45,7 @@ def fix(ctx: FixContext, max_attempts = 2):
                 console.print(f"[yellow]Reason: {llm_result['explanation']}[/yellow]")
             return {"fixed": False, "diff": "", "new_error": "", "explanation": llm_result["explanation"]}
 
-        if not validate_generated_code(llm_result["code"], ctx.affected):
+        if not validate_generated_code(llm_result["code"]):
             previous_error = "Code parsing failied due to incomplete code structure"
             continue
 
