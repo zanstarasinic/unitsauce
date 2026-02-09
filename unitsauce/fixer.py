@@ -1,5 +1,6 @@
+import ast
 from unitsauce.llm import call_llm, diagnose
-from .analysis import gather_context, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw
+from .analysis import gather_context, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw, validate_generated_code
 from .models import FixContext, FixResult
 from .prompts import fix_code_prompt, fix_test_prompt
 
@@ -44,7 +45,10 @@ def fix(ctx: FixContext, max_attempts = 2):
                 console.print(f"[yellow]Reason: {llm_result['explanation']}[/yellow]")
             return {"fixed": False, "diff": "", "new_error": "", "explanation": llm_result["explanation"]}
 
-        
+        if not validate_generated_code(llm_result["code"], ctx.affected):
+            previous_error = "Code parsing failied due to incomplete code structure"
+            continue
+
         result = try_fix_temporarily(
             file_path=ctx.file_path,
             generated_code=llm_result["code"],
@@ -196,8 +200,7 @@ def attempt_fix(failure, changed_files, path, mode):
 def try_fix_temporarily(file_path, generated_code, test_file, test_function, repo_path, original_error):
     """Apply fix, test it, restore original, return result."""
     
-    original_content = file_path.read_text()
-    
+    original_content = file_path.read_text()    
     try:
         apply_result = apply_fix(file_path, generated_code)
         if not apply_result:

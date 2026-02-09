@@ -177,3 +177,13 @@ def run_single_test(path, test_file, test_function):
         return True, ""
     else:
         return False, result.stderr
+    
+
+def validate_generated_code(code):
+    try:
+        tree = ast.parse(code)
+
+    except SyntaxError as se:
+        return False
+    
+    return True
