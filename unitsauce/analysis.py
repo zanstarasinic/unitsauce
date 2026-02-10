@@ -57,6 +57,7 @@ def get_failing_tests(path):
         if test["outcome"] == "failed":
             failures.append({
                 "file": test["nodeid"].split("::")[0],
+                "nodeid": test["nodeid"],
                 "function": test["nodeid"].split("::")[-1],
                 "error": test["call"]["crash"]["message"],
             })
@@ -166,10 +167,9 @@ def run_tests(path):
             console.print()
             return result
 
-def run_single_test(path, test_file, test_function):
-    test_id = f"{test_file}::{test_function}"
+def run_single_test(path, nodeid):
     result = subprocess.run(
-        ["python", "-m", "pytest", test_id, "-v"],
+        ["python", "-m", "pytest", nodeid, "-v"],
         cwd=path,
         capture_output=True,
         text=True
