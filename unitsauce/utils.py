@@ -37,10 +37,12 @@ def debug_log(title: str, content: str):
     if not DEBUG:
         return
     
+    safe_content = content.replace('`', '\'')
+    
     print()
     print("=" * 70)
     print(f"DEBUG: {title}")
     print("-" * 70)
-    print(content)
+    print(safe_content)
     print("=" * 70)
     print()
