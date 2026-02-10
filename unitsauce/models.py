@@ -24,10 +24,12 @@ class FixContext:
     repo_path: Path
     fix_type: str
 
+    nodeid: str
+
     diff: str = ""
     affected: list = None
 
-    nodeid: str
+
 
 @dataclass
 class Diagnosis:
