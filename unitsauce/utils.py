@@ -37,15 +37,13 @@ def debug_log(title: str, content: str):
     if not DEBUG:
         return
     
-    if isinstance(content, dict):
-        content = str(content)
-    
-    safe_content = content.replace('`', '\'')
+    if isinstance(content, str):
+        content =content.replace('`', '\'')
     
     print()
     print("=" * 70)
     print(f"DEBUG: {title}")
     print("-" * 70)
-    print(safe_content)
+    print(content)
     print("=" * 70)
     print()
