@@ -72,7 +72,7 @@ def main():
 
     if pr:
         comment = format_pr_comment_summary(results)
-        response = post_pr_comment(pr['repo'], pr['number'], comment)
+        post_pr_comment(pr['repo'], pr['number'], comment)
 
 
 

@@ -45,6 +45,8 @@ def call_llm(fix_prompt, functions, test_code, error_message, diff, previous_att
     if previous_attempt_error:
         prompt_content += "\n\nNOTE: A previous fix attempt did not resolve the issue. Try a different approach."
     
+    debug_log("PROMPT CONTENT", prompt_content)
+
     with Live(Spinner("dots", text="Generating solution..."), console=console):
         response = client.messages.create(
             model="claude-sonnet-4-20250514",

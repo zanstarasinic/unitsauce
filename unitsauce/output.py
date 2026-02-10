@@ -13,7 +13,6 @@ def format_result(result, format_type):
         return _format_json(result)
     
 def format_summary(results, format_type):
-    """Format summary of all results."""
     if format_type == 'console':
         return _format_console_summary(results)
     elif format_type == 'markdown':
@@ -24,8 +23,6 @@ def format_summary(results, format_type):
 
 def _format_console(result):
     """Format a single fix result for console output."""
-    
-
     if result.fixed:
         status = "[green]✓ FIXED[/green]"
     else:

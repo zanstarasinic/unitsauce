@@ -67,13 +67,12 @@ def format_diff_section(diff: str) -> str:
     
     diff = diff.strip()
     
-    # Remove existing code block markers if present
     if diff.startswith("```"):
         lines = diff.split("\n")
-        diff = "\n".join(lines[1:])  # Remove first line
+        diff = "\n".join(lines[1:])
     if diff.endswith("```"):
         lines = diff.split("\n")
-        diff = "\n".join(lines[:-1])  # Remove last line
+        diff = "\n".join(lines[:-1])
     
     diff = diff.strip()
     

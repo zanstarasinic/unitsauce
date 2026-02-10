@@ -39,8 +39,6 @@ CRITICAL: Return ONLY the function.
 - Do NOT include class definitions
 - Do NOT include other functions
 - Return ONLY the single function body, nothing else
-
-
 """
 
 
