@@ -2,6 +2,8 @@ import json
 import re
 import art
 from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
 import os
 
 console = Console()
@@ -31,9 +33,15 @@ def parse_json(text: str):
     return json.loads(match.group(1))
 
 
-def debug_log(title, content):
-    if DEBUG:
-        print("=" * 5)
-        print(title)
-        print(content)
-        print("=" * 5)
+def debug_log(title: str, content: str):
+    if not DEBUG:
+        return
+    
+    safe_content = Text(str(content))
+    
+    panel = Panel(
+        safe_content,
+        title=f"DEBUG: {title}",
+        border_style="yellow"
+    )
+    console.print(panel)
