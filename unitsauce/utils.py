@@ -37,6 +37,9 @@ def debug_log(title: str, content: str):
     if not DEBUG:
         return
     
+    if isinstance(content, dict):
+        content = str(content)
+    
     safe_content = content.replace('`', '\'')
     
     print()
