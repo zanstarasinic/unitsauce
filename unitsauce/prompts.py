@@ -31,7 +31,17 @@ One to two sentences explaining why the test is failing.
 - Changing code style or formatting
 - Adding defensive checks that weren't there
 - Converting between test patterns (return value test → exception test)
-- Guessing when uncertain - return empty code block instead"""
+- Guessing when uncertain - return empty code block instead
+
+CRITICAL: Return ONLY the function. 
+- Do NOT include imports
+- Do NOT include fixtures
+- Do NOT include class definitions
+- Do NOT include other functions
+- Return ONLY the single function body, nothing else
+
+
+"""
 
 
 fix_code_prompt = """
