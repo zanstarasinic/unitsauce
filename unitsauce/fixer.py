@@ -115,7 +115,9 @@ def try_fix_code(failure, test_code, source_file, source_code, path, fix_type, d
         test_function=failure['function'],
         fix_type=fix_type,
         diff=diff,
-        affected=affected_functions
+        affected=affected_functions,
+        nodeid=failure['nodeid']
+
     )
     return fix(context)
 
