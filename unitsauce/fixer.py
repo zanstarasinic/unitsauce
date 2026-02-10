@@ -23,6 +23,18 @@ def apply_fix(file_path, generated_code):
                 old = file_funcs[name]
                 start = old["start"] - 1
                 end = old["end"]
+
+                original_line = lines[start]
+                original_indent = len(original_line) - len(original_line.lstrip())
+                
+                generated_lines = raw_text.splitlines()
+                generated_indent = len(generated_lines[0]) - len(generated_lines[0].lstrip())
+                
+                indent_diff = original_indent - generated_indent
+                if indent_diff > 0:
+                    fixed_lines = [(" " * indent_diff) + line if line.strip() else line 
+                                for line in generated_lines]
+                    raw_text = "\n".join(fixed_lines)
                 lines[start:end] = raw_text.splitlines()
 
                 file_path.write_text("\n".join(lines))
