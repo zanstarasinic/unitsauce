@@ -113,7 +113,8 @@ def split_functions_raw(code):
     current_lines = []
     
     for line in lines:
-        if line.startswith('def '):
+        stripped_line = line.lstrip()
+        if stripped_line.startswith('def '):
             if current_name:
                 functions[current_name] = '\n'.join(current_lines)
             current_name = line.split('(')[0].replace('def ', '').strip()

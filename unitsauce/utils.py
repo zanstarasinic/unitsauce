@@ -2,8 +2,10 @@ import json
 import re
 import art
 from rich.console import Console
+import os
 
 console = Console()
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 def print_header():
     text = art.text2art("UnitSauce")
@@ -27,3 +29,11 @@ def parse_json(text: str):
         raise ValueError("No JSON found")
 
     return json.loads(match.group(1))
+
+
+def debug_log(title, content):
+    if DEBUG:
+        print("=" * 5)
+        print(title)
+        print(content)
+        print("=" * 5)

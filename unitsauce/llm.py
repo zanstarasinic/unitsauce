@@ -7,7 +7,7 @@ from rich.spinner import Spinner
 from rich.live import Live
 from unitsauce.models import Diagnosis
 from unitsauce.prompts import DIAGNOSIS_PROMPT, SYSTEM_PROMPT
-from .utils import console, parse_json
+from .utils import console, debug_log, parse_json
 
 load_dotenv()
 
@@ -58,6 +58,7 @@ def call_llm(fix_prompt, functions, test_code, error_message, diff, previous_att
     console.print()
     
     result = parse_llm_response(response.content[0].text)
+    debug_log("Call LLM response: ", response.content[0].text)
     
     return result  # {"explanation": "...", "code": "..."} or {"explanation": "...", "code": None}
 
@@ -82,8 +83,12 @@ def diagnose(functions, test_code, error_message, diff,):
     console.print()
 
     result = parse_json(response.content[0].text)
+    debug_log("Diagnosis LLM Output: ", result)
+
+    
 
     diagnosis = Diagnosis(cause=result.get("cause"), fix_location=result.get("fix_location"), confidence=result.get("confidence") )
+    debug_log("Diagnosis", diagnosis)
 
     return diagnosis
 

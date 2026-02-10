@@ -4,7 +4,7 @@ from .analysis import gather_context, get_single_file_diff, index_file_functions
 from .models import FixContext, FixResult
 from .prompts import fix_code_prompt, fix_test_prompt
 
-from .utils import console
+from .utils import console, debug_log
 
 
 
@@ -57,6 +57,7 @@ def fix(ctx: FixContext, max_attempts = 2):
             repo_path=ctx.repo_path,
             original_error=ctx.error_message
         )
+        debug_log("Result of fixing: ", result)
 
         if result["fixed"]:
             return result
@@ -130,6 +131,7 @@ def attempt_fix(failure, changed_files, path, mode):
             error_message=failure['error'],
             diff=diff
         )
+
         if mode == 'test':
             result = try_fix_test(failure, test_file_path, test_code, source_code, path, mode, diff, affected)
             if result["fixed"]:
