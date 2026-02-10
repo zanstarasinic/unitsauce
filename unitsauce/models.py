@@ -27,6 +27,8 @@ class FixContext:
     diff: str = ""
     affected: list = None
 
+    nodeid: str
+
 @dataclass
 class Diagnosis:
     cause: str

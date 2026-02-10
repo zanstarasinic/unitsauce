@@ -64,8 +64,7 @@ def fix(ctx: FixContext, max_attempts = 2):
         result = try_fix_temporarily(
             file_path=ctx.file_path,
             generated_code=llm_result["code"],
-            test_file=ctx.test_file,
-            test_function=ctx.test_function,
+            nodeid=ctx.nodeid,
             repo_path=ctx.repo_path,
             original_error=ctx.error_message
         )
@@ -96,7 +95,8 @@ def try_fix_test(failure, test_file_path, test_code, source_code, path, fix_type
         test_function=failure['function'],
         fix_type=fix_type,
         diff=diff,
-        affected=affected_functions
+        affected=affected_functions,
+        nodeid=failure['nodeid']
     )
     return fix(context)
 
@@ -211,7 +211,7 @@ def attempt_fix(failure, changed_files, path, mode):
                         confidence=diagnosis.confidence
                     )
 
-def try_fix_temporarily(file_path, generated_code, test_file, test_function, repo_path, original_error):
+def try_fix_temporarily(file_path, generated_code, nodeid, repo_path, original_error):
     """Apply fix, test it, restore original, return result."""
     
     original_content = file_path.read_text()    
@@ -223,7 +223,7 @@ def try_fix_temporarily(file_path, generated_code, test_file, test_function, rep
         new_content = file_path.read_text()
         diff = show_diff(original_content, new_content, file_path.name)
         
-        passed, error = run_single_test(repo_path, test_file, test_function)
+        passed, error = run_single_test(repo_path, nodeid)
         
         if passed:
             return {"fixed": True, "diff": diff, "new_error": ""}
