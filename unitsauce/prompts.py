@@ -83,7 +83,7 @@ Functions that were intentionally changed:
 {error_message}
 </error>
 
-The code changes are intentional. Analyze the diff to understand the new behavior, then update the TEST to match. Do not modify the source code - it is correct."""
+The code changes are intentional. Analyze the diff to understand the new behavior, then update only the test: {failing_test} to match. Do not modify the source code - it is correct."""
 
 DIAGNOSIS_PROMPT = """
 <source_code>

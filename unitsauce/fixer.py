@@ -84,7 +84,7 @@ def fix(ctx: FixContext, max_attempts = 2):
 def try_fix_test(failure, test_file_path, test_code, source_code, path, fix_type, diff, affected_functions):
     """Attempt to fix the test file."""
     context = FixContext(
-        prompt=fix_test_prompt,
+        prompt=fix_test_prompt.format(failing_test=failure['function']),
         function_name=failure['function'],
         file_path=test_file_path,
         function_code=source_code,
@@ -226,7 +226,6 @@ def try_fix_temporarily(file_path, generated_code, nodeid, repo_path, original_e
         diff = show_diff(original_content, new_content, file_path.name)
         
         passed, error = run_single_test(repo_path, nodeid)
-        debug_log("FIX WORKED", diff + "\n" + str(passed) + "\nERRRRRRR" + error + "\nERRRRRRR")
         if passed:
             return {"fixed": True, "diff": diff, "new_error": ""}
         
