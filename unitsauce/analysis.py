@@ -10,7 +10,7 @@ from rich.syntax import Syntax
 from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.live import Live
-from .utils import console
+from .utils import console, debug_log
 
 def normalize(content: str):
     return [
@@ -186,6 +186,7 @@ def run_single_test(path, nodeid):
         capture_output=True,
         text=True
     )
+    debug_log("FIX WORKED", "\nERRRRRRR" + result + "\nERRRRRRR")
     if result.returncode == 0:
         return True, ""
     else:
