@@ -226,7 +226,7 @@ def try_fix_temporarily(file_path, generated_code, nodeid, repo_path, original_e
         diff = show_diff(original_content, new_content, file_path.name)
         
         passed, error = run_single_test(repo_path, nodeid)
-        debug_log("FIX WORKED", diff + "\n" + str(passed) + "\n" + new_content + "\n" + error)
+        debug_log("FIX WORKED", diff + "\n" + str(passed) + "\nERRRRRRR" + error + "\nERRRRRRR")
         if passed:
             return {"fixed": True, "diff": diff, "new_error": ""}
         
