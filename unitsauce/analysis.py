@@ -186,7 +186,7 @@ def run_single_test(path, nodeid):
         capture_output=True,
         text=True
     )
-    debug_log("FIX WORKED", result.returncode + "\nERRRRRRR" + str(result) + "\nERRRRRRR")
+    debug_log("FIX WORKED", str(result.returncode) + "\nERRRRRRR" + str(result) + "\nERRRRRRR")
     if result.returncode == 0:
         return True, ""
     else:
