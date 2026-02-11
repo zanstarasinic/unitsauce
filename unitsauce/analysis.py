@@ -12,18 +12,30 @@ from rich.spinner import Spinner
 from rich.live import Live
 from .utils import console
 
+def normalize(content: str):
+    return [
+        line.rstrip().replace("\r\n", "\n").replace("\r", "\n")
+        for line in content.splitlines()
+    ]
+
 def show_diff(original, new, file_name):
+    original_lines = normalize(original)
+    new_lines = normalize(new)
+
     diff = difflib.unified_diff(
-        original.splitlines(keepends=True),
-        new.splitlines(keepends=True),
+        original_lines,
+        new_lines,
         fromfile=f"before/{file_name}",
-        tofile=f"after/{file_name}"
+        tofile=f"after/{file_name}",
+        lineterm=""
     )
-    diff_text = ''.join(diff)
+
+    diff_text = "\n".join(diff)
+
     if diff_text:
         syntax = Syntax(diff_text, "diff", theme="monokai", line_numbers=True)
         console.print(Panel(syntax, title="Changes", border_style="green"))
-    
+
     return diff_text
 
 def changed_lines(diff):
