@@ -55,6 +55,7 @@ Functions that were modified and may contain the bug:
 
 <failing_test>
 {test_code}
+{failing_test}
 </failing_test>
 
 <error>

@@ -49,7 +49,7 @@ def fix(ctx: FixContext, max_attempts = 2):
     previous_error = None
 
     for attempt in range(max_attempts):
-        llm_result = call_llm(ctx.prompt, ctx.affected, ctx.test_code, ctx.error_message, ctx.diff, previous_error)
+        llm_result = call_llm(ctx.prompt, ctx.affected, ctx.test_code, ctx.error_message, ctx.diff, ctx.test_function, previous_error)
 
         if llm_result["code"] is None:
             console.print("[red]LLM returned no code block[/red]")
@@ -84,7 +84,7 @@ def fix(ctx: FixContext, max_attempts = 2):
 def try_fix_test(failure, test_file_path, test_code, source_code, path, fix_type, diff, affected_functions):
     """Attempt to fix the test file."""
     context = FixContext(
-        prompt=fix_test_prompt.format(failing_test=failure['function']),
+        prompt=fix_test_prompt,
         function_name=failure['function'],
         file_path=test_file_path,
         function_code=source_code,

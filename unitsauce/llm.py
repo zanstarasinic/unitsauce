@@ -33,12 +33,13 @@ def parse_llm_response(response_text):
     return {"explanation": explanation, "code": code}
 
 
-def call_llm(fix_prompt, functions, test_code, error_message, diff, previous_attempt_error=None):
+def call_llm(fix_prompt, functions, test_code, error_message, diff, failing_test, previous_attempt_error=None):
     
     prompt_content = fix_prompt.format(
         function_code=functions,
         test_code=test_code,
         error_message=error_message,
+        failing_test=failing_test,
         diff=diff
     )
     
