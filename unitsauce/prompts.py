@@ -7,6 +7,11 @@ You must respond in EXACTLY this format:
 One to two sentences explaining why the test is failing.
 </explanation>
 
+<imports>
+New import statements needed for the fix (one per line), or "none" if no new imports required.
+Example: from src.models.product import InsufficientStockError
+</imports>
+
 <fix>
 ```python
 # Fixed code here
@@ -14,7 +19,8 @@ One to two sentences explaining why the test is failing.
 </fix>
 
 ## Rules
-- The code block must contain ONLY the fixed function(s), nothing else
+- The code block must contain ONLY the fixed function(s)
+- List any new imports in the <imports> section, not in the code block
 - If you cannot fix the issue, explain why and leave the code block empty
 - Never include markdown outside the specified format
 - Never apologize or hedge
@@ -24,7 +30,6 @@ One to two sentences explaining why the test is failing.
 - Preserve style: match existing indentation, quotes, naming
 - Preserve comments: never remove or modify comments
 - Preserve intent: don't change what the code/test is trying to do
-- One logical change: if you're changing multiple unrelated things, you're wrong
 
 ## Avoid
 - Rewriting functions that work fine
@@ -32,19 +37,11 @@ One to two sentences explaining why the test is failing.
 - Adding defensive checks that weren't there
 - Converting between test patterns (return value test → exception test)
 - Guessing when uncertain - return empty code block instead
-
-CRITICAL: Return ONLY the function and imports if you added any new modules. 
-- Do NOT include fixtures
-- Do NOT include class definitions
-- Do NOT include other functions
-- Return ONLY the single function body, nothing else
 """
 
 
 fix_code_prompt = """
 <source_code>
-Functions that were modified and may contain the bug:
-
 {function_code}
 </source_code>
 
@@ -54,20 +51,19 @@ Functions that were modified and may contain the bug:
 
 <failing_test>
 {test_code}
-{failing_test}
 </failing_test>
 
 <error>
 {error_message}
 </error>
 
-The test was passing before these code changes. Analyze the diff to find the bug in the SOURCE CODE and fix it. Do not modify the test - the test expectations are correct."""
+The test was passing before these code changes. Analyze the diff to find the bug in the SOURCE CODE and fix it.
+
+Return ONLY the fixed function. Do not modify the test."""
 
 
 fix_test_prompt = """
 <source_code>
-Functions that were intentionally changed:
-
 {function_code}
 </source_code>
 
@@ -83,7 +79,10 @@ Functions that were intentionally changed:
 {error_message}
 </error>
 
-The code changes are intentional. Analyze the diff to understand the new behavior, then update only the test: {failing_test} to match. Do not modify the source code - it is correct."""
+The code changes are intentional. Update the test `{failing_test}` to match the new behavior.
+
+Return ONLY the fixed test function. If new imports are needed, list them in the <imports> section."""
+
 
 DIAGNOSIS_PROMPT = """
 <source_code>

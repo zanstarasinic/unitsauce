@@ -1,6 +1,6 @@
 import ast
 from unitsauce.llm import call_llm, diagnose
-from .analysis import gather_context, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw, validate_generated_code
+from .analysis import add_imports_to_file, gather_context, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw, validate_generated_code
 from .models import FixContext, FixResult
 from .prompts import fix_code_prompt, fix_test_prompt
 
@@ -66,7 +66,8 @@ def fix(ctx: FixContext, max_attempts = 2):
             generated_code=llm_result["code"],
             nodeid=ctx.nodeid,
             repo_path=ctx.repo_path,
-            original_error=ctx.error_message
+            original_error=ctx.error_message,
+            new_imports=llm_result.get("imports", [])
         )
         debug_log("Result of fixing: ", result)
 
@@ -217,11 +218,13 @@ def attempt_fix(failure, changed_files, path, mode):
                         confidence=diagnosis.confidence
                     )
 
-def try_fix_temporarily(file_path, generated_code, nodeid, repo_path, original_error):
+def try_fix_temporarily(file_path, generated_code, nodeid, repo_path, original_error, new_imports=None):
     """Apply fix, test it, restore original, return result."""
     
     original_content = file_path.read_text()    
     try:
+        if new_imports:
+            add_imports_to_file(file_path, new_imports)
         apply_result = apply_fix(file_path, generated_code)
         if not apply_result:
             return {"fixed": False, "diff": "", "new_error": ""}

@@ -201,3 +201,30 @@ def validate_generated_code(code):
         return False
     
     return True
+
+
+def add_imports_to_file(file_path, new_imports):
+    """Add imports to file after existing imports."""
+    if not new_imports:
+        return
+    
+    content = file_path.read_text()
+    lines = content.splitlines()
+    
+    last_import_idx = -1
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith('import ') or stripped.startswith('from '):
+            last_import_idx = i
+    
+    new_imports = [imp for imp in new_imports if imp not in content]
+    
+    if not new_imports:
+        return
+    
+    insert_idx = last_import_idx + 1 if last_import_idx >= 0 else 0
+    for imp in new_imports:
+        lines.insert(insert_idx, imp)
+        insert_idx += 1
+    
+    file_path.write_text('\n'.join(lines))

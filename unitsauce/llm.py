@@ -16,21 +16,27 @@ client = Anthropic(
 )
 
 def parse_llm_response(response_text):
-    """Extract explanation and code from structured response."""
-    
     explanation = ""
     code = None
+    imports = []
     
     exp_match = re.search(r'<explanation>(.*?)</explanation>', response_text, re.DOTALL)
     if exp_match:
         explanation = exp_match.group(1).strip()
+    
+    imp_match = re.search(r'<imports>(.*?)</imports>', response_text, re.DOTALL)
+    if imp_match:
+        imp_text = imp_match.group(1).strip()
+        if imp_text.lower() != "none":
+            imports = [line.strip() for line in imp_text.splitlines() if line.strip()]
     
     fix_match = re.search(r'<fix>\s*```python(.*?)```\s*</fix>', response_text, re.DOTALL)
     if fix_match:
         code = fix_match.group(1).strip()
         if not code:
             code = None
-    return {"explanation": explanation, "code": code}
+    
+    return {"explanation": explanation, "code": code, "imports": imports}
 
 
 def call_llm(fix_prompt, functions, test_code, error_message, diff, failing_test, previous_attempt_error=None):
