@@ -130,7 +130,9 @@ def attempt_fix(failure, changed_files, path, mode):
         files_to_try = [guessed_name] + [f for f in changed_files if f != guessed_name]
     else:
         files_to_try = changed_files
-
+    debug_log("Changed files", changed_files)
+    debug_log("Guessed name", guessed_name)
+    debug_log("Files to try", files_to_try)
     for source_file in files_to_try:
         source_path, source_code = read_file_content(source_file, path)
         if not source_path:
