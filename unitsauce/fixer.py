@@ -125,14 +125,16 @@ def attempt_fix(failure, changed_files, path, mode):
     test_file_path, test_code = read_file_content(failure['file'], path)
 
     guessed_name = failure['file'].split("/")[-1].replace("test_", "")
-    debug_log("Changed Files", str(changed_files) + "....." + str(failure) + "....." + guessed_name + "....." + failure['file'])
-    if guessed_name in changed_files:
-        files_to_try = [guessed_name] + [f for f in changed_files if f != guessed_name]
+    matching_file = None
+    for f in changed_files:
+        if f.endswith(guessed_name):
+            matching_file = f
+            break
+
+    if matching_file:
+        files_to_try = [matching_file] + [f for f in changed_files if f != matching_file]
     else:
         files_to_try = changed_files
-    debug_log("Changed files", changed_files)
-    debug_log("Guessed name", guessed_name)
-    debug_log("Files to try", files_to_try)
     for source_file in files_to_try:
         source_path, source_code = read_file_content(source_file, path)
         if not source_path:
