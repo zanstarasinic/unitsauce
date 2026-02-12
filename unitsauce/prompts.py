@@ -7,6 +7,10 @@ You must respond in EXACTLY this format:
 One to two sentences explaining why the test is failing.
 </explanation>
 
+<imports>
+Any new imports needed (one per line), or "none" if no new imports required.
+</imports>
+
 <fix>
 ```python
 # Fixed code here
@@ -15,6 +19,7 @@ One to two sentences explaining why the test is failing.
 
 ## Rules
 - The code block must contain ONLY the fixed function(s), nothing else
+- If new imports are needed for your fix, list them in the <imports> section
 - If you cannot fix the issue, explain why and leave the code block empty
 - Never include markdown outside the specified format
 - Never apologize or hedge
@@ -33,12 +38,12 @@ One to two sentences explaining why the test is failing.
 - Converting between test patterns (return value test → exception test)
 - Guessing when uncertain - return empty code block instead
 
-CRITICAL: Return ONLY the function. 
-- Do NOT include imports
+CRITICAL: Return ONLY the function in the fix block.
+- Do NOT include imports in the fix block (put them in <imports> section)
 - Do NOT include fixtures
 - Do NOT include class definitions
 - Do NOT include other functions
-- Return ONLY the single function body, nothing else
+- Return ONLY the single function body in the fix block
 """
 
 
@@ -84,7 +89,14 @@ Functions that were intentionally changed:
 {error_message}
 </error>
 
-The code changes are intentional. Analyze the diff to understand the new behavior, then update only the test: {failing_test} to match. Do not modify the source code - it is correct."""
+<current_imports>
+{current_imports}
+</current_imports>
+
+The code changes are intentional. Analyze the diff to understand the new behavior, then update only the test: {failing_test} to match. Do not modify the source code - it is correct.
+
+If your fix requires new imports, list them in the <imports> section."""
+
 
 DIAGNOSIS_PROMPT = """
 <source_code>
