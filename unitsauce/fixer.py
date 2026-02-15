@@ -138,9 +138,15 @@ def attempt_fix(failure, changed_files, path, mode):
     else:
         files_to_try = changed_files
 
-    failing_file_name = extract_failure_file(failure['error'])
-    if failing_file_name and failing_file_name not in files_to_try:
-        files_to_try = [failing_file_name] + files_to_try
+    failing_file_path = failure['crash_file']
+    matching_file = None
+    for f in files_to_try:
+        if f.endswith(failing_file_path):
+            matching_file = f
+            break
+
+    if not matching_file:
+        files_to_try = [failing_file_path] + files_to_try
     print("files_to_try: ", files_to_try)
     for source_file in files_to_try:
         source_path, source_code = read_file_content(source_file, path)
