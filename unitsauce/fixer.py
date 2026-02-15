@@ -141,7 +141,7 @@ def attempt_fix(failure, changed_files, path, mode):
     failing_file_name = extract_failure_file(failure['error'])
     if failing_file_name and failing_file_name not in files_to_try:
         files_to_try = [failing_file_name] + files_to_try
-
+    print("files_to_try: ", files_to_try)
     for source_file in files_to_try:
         source_path, source_code = read_file_content(source_file, path)
         if not source_path:
