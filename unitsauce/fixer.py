@@ -150,6 +150,7 @@ def attempt_fix(failure, changed_files, path, mode):
 
     for source_file in files_to_try:
         source_path, source_code = read_file_content(source_file, path)
+        debug_log("Source content", source_code)
         if not source_path:
             continue
 
