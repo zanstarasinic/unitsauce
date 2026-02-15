@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
+import traceback
 
 from rich.syntax import Syntax
 from rich.panel import Panel
@@ -228,3 +230,12 @@ def add_imports_to_file(file_path, new_imports):
         insert_idx += 1
     
     file_path.write_text('\n'.join(lines))
+
+
+def get_error_file_from_exception():
+    exc_type, exc_value, exc_tb = sys.exc_info()
+    tb = traceback.extract_tb(exc_tb)
+    
+    last_frame = tb[-1]
+    
+    return last_frame.filename
