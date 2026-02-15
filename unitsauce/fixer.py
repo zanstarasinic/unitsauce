@@ -146,7 +146,7 @@ def attempt_fix(failure, changed_files, path, mode):
             break
 
     if not matching_file:
-        files_to_try = [failing_file_path] + files_to_try
+        files_to_try = [failing_file_path.split("/")[-1]] + files_to_try
     print("files_to_try: ", files_to_try)
     for source_file in files_to_try:
         source_path, source_code = read_file_content(source_file, path)
