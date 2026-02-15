@@ -188,7 +188,6 @@ def run_single_test(path, nodeid):
         capture_output=True,
         text=True
     )
-    debug_log("FIX WORKED", str(result.returncode) + "\nERRRRRRR" + str(result) + "\nERRRRRRR")
     if result.returncode == 0:
         return True, ""
     else:
@@ -232,11 +231,15 @@ def add_imports_to_file(file_path, new_imports):
     file_path.write_text('\n'.join(lines))
 
 
-def get_error_file_from_exception():
-    exc_type, exc_value, exc_tb = sys.exc_info()
-    tb = traceback.extract_tb(exc_tb)
-    print(tb)
-    
-    last_frame = tb[-1]
-    
-    return last_frame.filename
+def extract_failure_file(traceback_text: str):
+    pattern = r'File "([^"]+)", line (\d+)'
+    matches = re.findall(pattern, traceback_text)
+
+    if not matches:
+        return None
+
+    file_path, line_number = matches[-1]
+    return {
+        "file": file_path,
+        "line": int(line_number)
+    }

@@ -1,6 +1,6 @@
 import ast
 from unitsauce.llm import call_llm, diagnose
-from .analysis import add_imports_to_file, gather_context, get_error_file_from_exception, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw, validate_generated_code
+from .analysis import add_imports_to_file, extract_failure_file, gather_context, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw, validate_generated_code
 from .models import FixContext, FixResult
 from .prompts import fix_code_prompt, fix_test_prompt
 
@@ -138,8 +138,8 @@ def attempt_fix(failure, changed_files, path, mode):
     else:
         files_to_try = changed_files
 
-    failing_file_name = get_error_file_from_exception()
-    if failing_file_name not in files_to_try:
+    failing_file_name = extract_failure_file(failure['error'])
+    if failing_file_name and failing_file_name not in files_to_try:
         files_to_try = [failing_file_name] + files_to_try
 
     for source_file in files_to_try:
