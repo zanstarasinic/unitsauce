@@ -1,6 +1,6 @@
 import ast
 from unitsauce.llm import call_llm, diagnose
-from .analysis import add_imports_to_file, extract_failure_file, gather_context, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw, validate_generated_code
+from .analysis import add_imports_to_file, extract_failure_file, extract_function_source, gather_context, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw, validate_generated_code
 from .models import FixContext, FixResult
 from .prompts import fix_code_prompt, fix_test_prompt
 
@@ -150,12 +150,23 @@ def attempt_fix(failure, changed_files, path, mode):
 
     for source_file in files_to_try:
         source_path, source_code = read_file_content(source_file, path)
-        debug_log("Source content", source_code)
         if not source_path:
             continue
 
         diff = get_single_file_diff(path, source_file)
-        affected = gather_context(diff, source_code)
+        if diff:
+            affected = gather_context(diff, source_code)
+        else:
+            if source_file == crash_file:
+                funcs = index_file_functions(source_code)
+                crash_line = failure['crash_line']
+                affected = []
+                for f in funcs:
+                    if f["start"] <= crash_line <= f["end"]:
+                        affected.append(extract_function_source(source_code, f))
+                        break
+            else:
+                continue
         
         diagnosis = diagnose(
             functions=affected,
