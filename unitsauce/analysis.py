@@ -75,6 +75,7 @@ def get_failing_tests(path):
                 "function": test["nodeid"].split("::")[-1],
                 "error": test["call"]["crash"]["message"],
                 "crash_file": test["call"]["crash"]["path"],
+                "crash_line": test["call"]["crash"]["line"]
             })
 
     return failures
