@@ -235,6 +235,7 @@ def add_imports_to_file(file_path, new_imports):
 def get_error_file_from_exception():
     exc_type, exc_value, exc_tb = sys.exc_info()
     tb = traceback.extract_tb(exc_tb)
+    print(tb)
     
     last_frame = tb[-1]
     
