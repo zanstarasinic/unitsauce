@@ -69,6 +69,9 @@ def get_failing_tests(path):
     failures = []
     for test in report["tests"]:
         if test["outcome"] == "failed":
+            print("JSON DUMPS")
+            print(json.dumps(test["call"], indent=2))
+
             failures.append({
                 "file": test["nodeid"].split("::")[0],
                 "nodeid": test["nodeid"],
