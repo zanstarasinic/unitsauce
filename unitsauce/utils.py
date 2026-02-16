@@ -1,21 +1,10 @@
 import json
 import re
-import art
-from rich.console import Console
-from rich.panel import Panel
-from rich.text import Text
 import os
+from rich.console import Console
 
 console = Console()
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
-
-def print_header():
-    text = art.text2art("UnitSauce")
-
-    print("```")
-    print(text.rstrip())
-    print("```")
-    print("*AI-powered test fixer*")
 
 
 def parse_json(text: str):
@@ -33,12 +22,16 @@ def parse_json(text: str):
     return json.loads(match.group(1))
 
 
-def debug_log(title: str, content: str):
+def debug_log(title: str, content):
     if not DEBUG:
         return
     
-    if isinstance(content, str):
-        content =content.replace('`', '\'')
+    if isinstance(content, dict):
+        content = json.dumps(content, indent=2, default=str)
+    elif not isinstance(content, str):
+        content = str(content)
+    
+    content = content.replace('`', '\'')
     
     print()
     print("=" * 70)

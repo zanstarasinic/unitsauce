@@ -1,11 +1,20 @@
-import ast
-from unitsauce.llm import call_llm, diagnose
-from .analysis import add_imports_to_file, extract_failure_file, extract_function_source, gather_context, get_single_file_diff, index_file_functions, read_file_content, run_single_test, run_tests, show_diff, split_functions_raw, validate_generated_code
+from pathlib import Path
+from .llm import call_llm, diagnose
+from .analysis import (
+    add_imports_to_file,
+    extract_function_source,
+    gather_context,
+    get_single_file_diff,
+    index_file_functions,
+    read_file_content,
+    run_single_test,
+    show_diff,
+    split_functions_raw,
+    validate_generated_code
+)
 from .models import FixContext, FixResult
 from .prompts import fix_code_prompt, fix_test_prompt
-
-from .utils import console, debug_log
-
+from .utils import debug_log
 
 
 def apply_fix(file_path, generated_code):
@@ -15,7 +24,6 @@ def apply_fix(file_path, generated_code):
         file_funcs = {f["name"]: f for f in file_funcs_list}
 
         lines = source.splitlines()
-
         raw_funcs = split_functions_raw(generated_code)
 
         for name, raw_text in sorted(raw_funcs.items(), key=lambda x: file_funcs.get(x[0], {}).get("start", 0), reverse=True):
@@ -41,24 +49,22 @@ def apply_fix(file_path, generated_code):
         return True
         
     except SyntaxError as e:
-        console.print(f"[red]Claude returned invalid code: {e}[/red]")
+        debug_log("Apply fix error", str(e))
         return False
 
-def fix(ctx: FixContext, max_attempts = 2):
 
+def fix(ctx: FixContext, max_attempts=2):
     previous_error = None
 
     for attempt in range(max_attempts):
         llm_result = call_llm(ctx.prompt, ctx.affected, ctx.test_code, ctx.error_message, ctx.diff, ctx.test_function, previous_error)
 
         if llm_result["code"] is None:
-            console.print("[red]LLM returned no code block[/red]")
-            if llm_result["explanation"]:
-                console.print(f"[yellow]Reason: {llm_result['explanation']}[/yellow]")
+            debug_log("LLM returned no code", llm_result.get("explanation", ""))
             return {"fixed": False, "diff": "", "new_error": "", "explanation": llm_result["explanation"]}
 
         if not validate_generated_code(llm_result["code"]):
-            previous_error = "Code parsing failied due to incomplete code structure"
+            previous_error = "Code parsing failed due to incomplete code structure"
             continue
 
         result = try_fix_temporarily(
@@ -69,7 +75,7 @@ def fix(ctx: FixContext, max_attempts = 2):
             original_error=ctx.error_message,
             new_imports=llm_result.get("imports", [])
         )
-        debug_log("Result of fixing: ", result)
+        debug_log("Fix result", result)
 
         if result["fixed"]:
             return result
@@ -78,12 +84,12 @@ def fix(ctx: FixContext, max_attempts = 2):
             return result
         
         previous_error = f"Attempt {attempt + 1} failed with same error"
-        console.print(f"[yellow]Attempt {attempt + 1} failed, retrying...[/yellow]")
+        debug_log("Retry", f"Attempt {attempt + 1} failed, retrying...")
     
     return {"fixed": False, "diff": "", "new_error": ""}
 
+
 def try_fix_test(failure, test_file_path, test_code, source_code, path, fix_type, diff, affected_functions):
-    """Attempt to fix the test file."""
     context = FixContext(
         prompt=fix_test_prompt,
         function_name=failure['function'],
@@ -103,7 +109,6 @@ def try_fix_test(failure, test_file_path, test_code, source_code, path, fix_type
 
 
 def try_fix_code(failure, test_code, source_file, source_code, path, fix_type, diff, affected_functions):
-    """Attempt to fix the source code."""
     context = FixContext(
         prompt=fix_code_prompt,
         function_name=source_file,
@@ -118,13 +123,11 @@ def try_fix_code(failure, test_code, source_file, source_code, path, fix_type, d
         diff=diff,
         affected=affected_functions,
         nodeid=failure['nodeid']
-
     )
     return fix(context)
 
+
 def attempt_fix(failure, changed_files, path, mode):
-    from pathlib import Path
-    
     test_file_path, test_code = read_file_content(failure['file'], path)
 
     repo_path = Path(path).resolve()
@@ -146,7 +149,7 @@ def attempt_fix(failure, changed_files, path, mode):
         if f not in files_to_try:
             files_to_try.append(f)
 
-    print("files_to_try:", files_to_try)
+    debug_log("Files to try", files_to_try)
 
     for source_file in files_to_try:
         source_path, source_code = read_file_content(source_file, path)
@@ -174,6 +177,7 @@ def attempt_fix(failure, changed_files, path, mode):
             error_message=failure['error'],
             diff=diff
         )
+        debug_log("Diagnosis", {"cause": diagnosis.cause, "fix_location": diagnosis.fix_location, "confidence": diagnosis.confidence})
 
         if mode == 'test':
             result = try_fix_test(failure, test_file_path, test_code, source_code, path, mode, diff, affected)
@@ -246,9 +250,8 @@ def attempt_fix(failure, changed_files, path, mode):
         confidence=diagnosis.confidence if 'diagnosis' in dir() else "low"
     )
 
+
 def try_fix_temporarily(file_path, generated_code, nodeid, repo_path, original_error, new_imports=None):
-    """Apply fix, test it, restore original, return result."""
-    
     original_content = file_path.read_text()    
     try:
         if new_imports:

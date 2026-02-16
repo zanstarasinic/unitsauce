@@ -1,9 +1,13 @@
 import json
 import os
-from .utils import console
 import httpx
 
+from .output import _format_markdown_summary
+from .utils import console
+
+
 def check_if_pull_request():
+    """Check if running in a PR context. Returns PR info or None."""
     event_name = os.getenv("GITHUB_EVENT_NAME")
     event_path = os.getenv("GITHUB_EVENT_PATH")
     repo = os.getenv("GITHUB_REPOSITORY")
@@ -28,10 +32,10 @@ def check_if_pull_request():
 
 def post_pr_comment(repo, pr_number, body):
     """Post a comment to a PR. Returns True if successful."""
-
     token = os.getenv("GITHUB_TOKEN")
     
     if not token:
+        console.print("[red]✗[/red] No GITHUB_TOKEN found")
         return False
     
     url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
@@ -40,91 +44,19 @@ def post_pr_comment(repo, pr_number, body):
         "Accept": "application/vnd.github+json"
     }
     
-    response = httpx.post(url, json={"body": body}, headers=headers)
-    if response.status_code == httpx.codes.ok:
-        console.print("Comment posted successfully\n")
-    else:
-        console.print(response.raise_for_status())
-
-
-
-def get_confidence_badge(confidence: str) -> str:
-    badges = {
-        "high": "🟢",
-        "medium": "🟡",
-        "low": "🔴"
-    }
-    return badges.get(confidence, "⚪")
-
-
-def get_confidence_label(confidence: str) -> str:
-    return confidence.capitalize() if confidence else "Unknown"
-
-
-def format_diff_section(diff: str) -> str:
-    if not diff:
-        return ""
-    
-    diff = diff.strip()
-    
-    if diff.startswith("```"):
-        lines = diff.split("\n")
-        diff = "\n".join(lines[1:])
-    if diff.endswith("```"):
-        lines = diff.split("\n")
-        diff = "\n".join(lines[:-1])
-    
-    diff = diff.strip()
-    
-    return f"```diff\n{diff}\n```"
-
-
-def format_pr_comment_summary(results):
-    total = len(results)
-    fixed = sum(1 for r in results if r.fixed)
-    partial = sum(1 for r in results if r.partial)
-    
-    comment = "## 🔧 UnitSauce Analysis\n\n"
-    comment += f"Found **{total}** failing test(s)"
-    
-    if fixed > 0:
-        comment += f", fixed **{fixed}**"
-    if partial > 0:
-        comment += f", partially fixed **{partial}**"
-    
-    comment += ".\n\n---\n\n"
-    
-    for result in results:
-        badge = get_confidence_badge(result.confidence)
-        confidence_label = get_confidence_label(result.confidence)
-        cause_text = result.cause if result.cause else "Unknown"
-        
-        if result.fixed:
-            comment += f"### ✅ `{result.test_file}::{result.test_function}`\n\n"
-            comment += f"**Error:** `{result.error_message[:150]}`\n\n"
-            comment += f"**Why it failed:** {cause_text}\n\n"
-            comment += f"**Confidence:** {confidence_label} {badge}\n\n"
-            
-            fix_label = "Suggested fix" if result.confidence != "low" else "Possible fix (low confidence)"
-            comment += f"**{fix_label}** ({result.fix_type}):\n\n"
-            comment += format_diff_section(result.diff)
-            comment += "\n\n---\n\n"
-        
-        elif result.partial:
-            comment += f"### ⚠️ `{result.test_file}::{result.test_function}`\n\n"
-            comment += f"**Error:** `{result.error_message[:150]}`\n\n"
-            comment += f"**Why it failed:** {cause_text}\n\n"
-            comment += f"**Confidence:** {confidence_label} {badge}\n\n"
-            comment += "**Partial fix applied** - original error resolved but new error occurred:\n\n"
-            comment += f"`{result.new_error[:150] if result.new_error else 'Unknown error'}`\n\n"
-            comment += format_diff_section(result.diff)
-            comment += "\n\n---\n\n"
-        
+    try:
+        response = httpx.post(url, json={"body": body}, headers=headers)
+        if response.status_code == 201:
+            console.print(f"[green]✓[/green] Posted to PR #{pr_number}")
+            return True
         else:
-            comment += f"### ❌ `{result.test_file}::{result.test_function}`\n\n"
-            comment += f"**Error:** `{result.error_message[:150]}`\n\n"
-            comment += f"**Why it failed:** {cause_text}\n\n"
-            comment += f"**Confidence:** {confidence_label} {badge}\n\n"
-            comment += "Could not auto-fix this failure.\n\n---\n\n"
-    
-    return comment
+            console.print(f"[red]✗[/red] Failed to post comment: {response.status_code}")
+            return False
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error posting comment: {e}")
+        return False
+
+
+def format_pr_comment(results):
+    """Format results for PR comment. Uses shared markdown formatter."""
+    return _format_markdown_summary(results)
