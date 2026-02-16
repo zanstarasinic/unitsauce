@@ -2,20 +2,16 @@ import json
 from .utils import console
 
 
-# === HELPERS ===
-
-def get_confidence_display(confidence: str) -> str:
-    """Return confidence text with emoji."""
-    displays = {
-        "high": "High 🟢",
-        "medium": "Medium 🟡",
-        "low": "Low 🔴"
+def get_confidence_badge(confidence: str) -> str:
+    badges = {
+        "high": "✓ High Confidence",
+        "medium": "⚠ Medium Confidence", 
+        "low": "✗ Low Confidence"
     }
-    return displays.get(confidence, "Unknown ⚪")
+    return badges.get(confidence, "Unknown")
 
 
-def format_diff_section(diff: str) -> str:
-    """Format diff for markdown output."""
+def format_diff_section(diff: str, filename: str = "") -> str:
     if not diff:
         return ""
     
@@ -31,8 +27,6 @@ def format_diff_section(diff: str) -> str:
     diff = diff.strip()
     return f"```diff\n{diff}\n```"
 
-
-# === MAIN FORMATTERS ===
 
 def format_result(result, format_type):
     if format_type == 'console':
@@ -52,10 +46,7 @@ def format_summary(results, format_type):
         return _format_json_summary(results)
 
 
-# === CONSOLE OUTPUT ===
-
 def _format_console(result):
-    """Format a single fix result for console output."""
     if result.fixed:
         console.print(f"[green]✓[/green] {result.test_file}::{result.test_function}")
     elif result.partial:
@@ -65,7 +56,6 @@ def _format_console(result):
 
 
 def _format_console_summary(results):
-    """Format summary for console output."""
     total = len(results)
     fixed = sum(1 for r in results if r.fixed)
     partial = sum(1 for r in results if r.partial)
@@ -83,45 +73,39 @@ def _format_console_summary(results):
         console.print(f"[red]✗[/red] Fixed {fixed}/{total} tests")
 
 
-# === MARKDOWN OUTPUT ===
-
 def _format_markdown(result):
-    """Format a single fix result for markdown."""
-    confidence_display = get_confidence_display(result.confidence)
+    confidence_badge = get_confidence_badge(result.confidence)
     cause_text = result.cause if result.cause else "Unknown cause"
     error_short = result.error_message[:150] if result.error_message else "Unknown error"
     
     if result.fixed:
         md = f"### ✅ {result.test_file}::{result.test_function}\n\n"
-        md += f"**Error:** `{error_short}`\n\n"
-        md += f"**Why it failed:** {cause_text}\n\n"
-        md += f"**Confidence:** {confidence_display}\n\n"
-        md += f"**Suggested fix** ({result.fix_type}):\n\n"
+        md += f"**Suggested Fix** · {confidence_badge}\n\n"
+        md += f"> `{error_short}`\n\n"
+        md += f"**Root cause:** {cause_text}\n\n"
         md += format_diff_section(result.diff)
         md += "\n\n"
     
     elif result.partial:
         md = f"### ⚠️ {result.test_file}::{result.test_function}\n\n"
-        md += f"**Error:** `{error_short}`\n\n"
-        md += f"**Why it failed:** {cause_text}\n\n"
-        md += f"**Confidence:** {confidence_display}\n\n"
+        md += f"**Partial Fix** · {confidence_badge}\n\n"
+        md += f"> `{error_short}`\n\n"
+        md += f"**Root cause:** {cause_text}\n\n"
         new_error_short = result.new_error[:150] if result.new_error else "Unknown error"
-        md += f"**Partial fix** - new error occurred:\n\n`{new_error_short}`\n\n"
+        md += f"**New error:** `{new_error_short}`\n\n"
         md += format_diff_section(result.diff)
         md += "\n\n"
     
     else:
         md = f"### ❌ {result.test_file}::{result.test_function}\n\n"
-        md += f"**Error:** `{error_short}`\n\n"
-        md += f"**Why it failed:** {cause_text}\n\n"
-        md += f"**Confidence:** {confidence_display}\n\n"
-        md += "Could not auto-fix this failure.\n\n"
+        md += f"**Could Not Fix** · {confidence_badge}\n\n"
+        md += f"> `{error_short}`\n\n"
+        md += f"**Root cause:** {cause_text}\n\n"
     
     return md
 
 
 def _format_markdown_summary(results):
-    """Format summary header for markdown."""
     total = len(results)
     fixed = sum(1 for r in results if r.fixed)
     partial = sum(1 for r in results if r.partial)
@@ -140,7 +124,6 @@ def _format_markdown_summary(results):
     
     md += "---\n\n"
     
-    # Add each result
     for result in results:
         md += _format_markdown(result)
         md += "---\n\n"
@@ -148,10 +131,7 @@ def _format_markdown_summary(results):
     return md
 
 
-# === JSON OUTPUT ===
-
 def _format_json(result):
-    """Format a single result as JSON dict."""
     return {
         "test_file": result.test_file,
         "test_function": result.test_function,
@@ -168,7 +148,6 @@ def _format_json(result):
 
 
 def _format_json_summary(results):
-    """Format all results as JSON."""
     total = len(results)
     fixed = sum(1 for r in results if r.fixed)
     partial = sum(1 for r in results if r.partial)
