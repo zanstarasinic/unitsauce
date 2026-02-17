@@ -4,11 +4,11 @@ from .utils import console
 
 def get_confidence_badge(confidence: str) -> str:
     badges = {
-        "high": "✓ High Confidence",
-        "medium": "⚠ Medium Confidence", 
-        "low": "✗ Low Confidence"
+        "high": "![High Confidence](https://img.shields.io/badge/✓_High_Confidence-4ade80?style=flat-square)",
+        "medium": "![Medium Confidence](https://img.shields.io/badge/⚠_Medium_Confidence-fbbf24?style=flat-square)",
+        "low": "![Low Confidence](https://img.shields.io/badge/✗_Low_Confidence-f87171?style=flat-square)"
     }
-    return badges.get(confidence, "Unknown")
+    return badges.get(confidence, "")
 
 
 def format_diff_section(diff: str, filename: str = "") -> str:
