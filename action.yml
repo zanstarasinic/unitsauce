@@ -1,14 +1,17 @@
 name: 'UnitSauce'
-description: 'AI-powered test failure analysis and fix suggestions'
+description: 'AI-powered CLI that diagnoses failing pytest tests, generates minimal fixes with confidence scoring, and posts them directly on your PR.'
 author: 'Zan Starasinic'
 
 branding:
   icon: 'check-circle'
-  color: 'green'
+  color: 'orange'
 
 inputs:
   anthropic_api_key:
     description: 'Anthropic API key'
+    required: true
+  github_token:
+    description: 'GitHub token for posting PR comments'
     required: true
   mode:
     description: 'Fix mode: auto, code, test'
@@ -40,6 +43,7 @@ runs:
       shell: bash
       env:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic_api_key }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
         DEBUG: ${{ inputs.debug }}
       run: |
         unitsauce . --mode ${{ inputs.mode }} --output markdown >> $GITHUB_STEP_SUMMARY
