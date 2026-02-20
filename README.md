@@ -1,144 +1,166 @@
-# UnitSauce
+# 🍝 UnitSauce
 
-AI-powered test failure analysis and auto-fix for Python projects.
+**Your tests break. We fix them.**
 
-UnitSauce analyzes failing tests, identifies bugs in your code changes, and generates fixes using Claude AI. Works as a CLI tool or GitHub Action.
+UnitSauce diagnoses failing pytest tests, generates minimal fixes, and posts suggestions directly to your PR. You review, you merge.
+
+```bash
+pip install unitsauce
+```
 
 ---
 
-## Features
+## What It Does
 
-- **Automatic failure detection** — Runs pytest and identifies failing tests
-- **AI-powered analysis** — Uses Claude to understand the bug from git diff
-- **Smart fixes** — Generates minimal code or test fixes
-- **Verification** — Confirms the fix actually works before reporting
-- **PR comments** — Posts fix suggestions directly to your pull request
+1. **Runs your tests** — finds what's failing
+2. **Reads your diff** — understands what changed
+3. **Diagnoses the failure** — explains *why* it broke
+4. **Generates a fix** — minimal diff, not a rewrite
+5. **Verifies it works** — runs the test again
+6. **Posts to your PR** — with confidence score
+
+You stay in control. It never auto-commits.
 
 ---
 
 ## Quick Start
 
-### CLI Usage
+### CLI
+
 ```bash
-pip install unitsauce
-```
-```bash
-# Auto-detect whether to fix code or test
-unitsauce /path/to/project
+# In your project directory
+unitsauce .
 
-# Force fix code only
-unitsauce /path/to/project --mode code
-
-# Force fix test only
-unitsauce /path/to/project --mode test
-
-# Output as markdown
-unitsauce /path/to/project --output markdown
+# Specify mode
+unitsauce . --mode auto    # Let it decide (default)
+unitsauce . --mode code    # Only fix source code
+unitsauce . --mode test    # Only update tests
 ```
 
 ### GitHub Action
 
-Add to your workflow (`.github/workflows/test.yml`):
 ```yaml
-name: Tests
-on:
-  pull_request:
-
-permissions:
-  pull-requests: write
+name: UnitSauce
+on: [pull_request]
 
 jobs:
-  test:
+  fix:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
-      
-      - uses: actions/setup-python@v5
+          fetch-depth: 0
+          
+      - uses: zanstarasinic/unitsauce@v1
         with:
-          python-version: '3.11'
-      
-      - name: Install dependencies
-        run: pip install pytest
-      
-      - name: Run tests
-        run: pytest
-      
-      - name: UnitSauce Analysis
-        if: failure()
-        uses: zanstarasinic/unitsauce@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ---
 
-## Configuration
+## Example Output
 
-### CLI Options
+When a test fails, UnitSauce posts a comment like this:
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--mode` | `auto`, `code`, or `test` | `auto` |
-| `--output` | `console`, `markdown`, or `json` | `console` |
+> ## 🍝 UnitSauce
+>
+> Fixed **3/3** failing tests
+>
+> ---
+>
+> ### ✅ tests/test_api.py::test_user_discount
+>
+> **Suggested Fix** · ✓ High Confidence
+>
+> > `AttributeError: 'User' object has no attribute 'get_discount_percentage'`
+>
+> **Root cause:** Method renamed from `get_discount_percentage()` to `get_tier_discount()`
+>
+> ```diff
+> - discount = user.get_discount_percentage()
+> + discount = user.get_tier_discount()
+> ```
 
-### Environment Variables
+---
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key |
-| `GITHUB_TOKEN` | For PR comments | Provided automatically by GitHub Actions |
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Root Cause Diagnosis** | Explains *why* the test failed, not just that it failed |
+| **Confidence Scoring** | High / Medium / Low — know when to trust the fix |
+| **Cross-File Detection** | Catches bugs in files you didn't change |
+| **Smart Imports** | Adds missing imports when needed |
+| **Safe by Default** | Never auto-commits. Always human-in-the-loop |
+
+---
+
+## Modes
+
+| Mode | When to Use |
+|------|-------------|
+| `auto` | Let UnitSauce decide if the bug is in code or tests |
+| `code` | You trust your tests — only fix source code |
+| `test` | Intentional refactor — only update test expectations |
 
 ---
 
 ## Requirements
 
 - Python 3.10+
-- Git repository
-- Anthropic API key
 - pytest
+- Anthropic API key — [get one here](https://console.anthropic.com/)
 
 ---
 
 ## How It Works
 
-1. Detects failures — Runs pytest and collects failing tests
-2. Analyzes changes — Gets git diff to see what changed
-3. Identifies affected code — Maps failures to modified functions
-4. Generates fix — Sends context to Claude, gets minimal fix
-5. Verifies — Applies fix, runs test again to confirm
-6. Reports — Shows diff or posts PR comment
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│   pytest ──▶ failures ──▶ git diff ──▶ diagnose ──▶ fix        │
+│                                                                 │
+│                              │                                  │
+│                              ▼                                  │
+│                         verify fix                              │
+│                              │                                  │
+│                              ▼                                  │
+│                       post to PR                                │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+1. Runs `pytest --json-report` to get structured failure data
+2. Gets `git diff` to see what changed
+3. Extracts the failing test and relevant source code
+4. Sends context to Claude with a focused prompt
+5. Validates the generated fix compiles
+6. Applies fix temporarily, runs test to verify
+7. If it passes, formats and posts to PR
 
 ---
 
-## Example PR Comment
-```
-UnitSauce Analysis
+## Limitations
 
-Found 1 failing test(s), fixed 1.
+**Works best on:**
 
----
+- ✅ Value/assertion mismatches
+- ✅ Renamed methods or changed signatures
+- ✅ Updated return types (dict → dataclass)
+- ✅ Missing imports
 
-test_calculator.py::test_add
+**Won't solve:**
 
-Error: assert 6 == 5
-
-Fixed by: Updating test in test_calculator.py
-
-- assert add(2, 3) == 5
-+ assert add(2, 3) == 6
-```
+- ❌ Complex logic bugs
+- ❌ Architectural issues
+- ❌ Tests that were wrong to begin with
 
 ---
 
-## Local Development
-```bash
-git clone https://github.com/zanstarasinic/unitsauce.git
-cd unitsauce
-pip install -e .
-```
+## Contributing
+
+Issues and PRs welcome.
 
 ---
 

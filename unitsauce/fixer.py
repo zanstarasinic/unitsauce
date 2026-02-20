@@ -14,10 +14,23 @@ from .analysis import (
 )
 from .models import FixContext, FixResult
 from .prompts import fix_code_prompt, fix_test_prompt
-from .utils import debug_log
+from .utils import debug_log, is_test_file
 
 
-def apply_fix(file_path, generated_code):
+def apply_fix(file_path, generated_code) -> bool:
+    """
+    Apply generated code fix to a file.
+    
+    Replaces existing functions with their fixed versions while
+    preserving indentation for class methods.
+    
+    Args:
+        file_path: Path object to the file to modify
+        generated_code: String containing the fixed function(s)
+    
+    Returns:
+        True if fix was applied successfully, False otherwise
+    """
     try:
         source = file_path.read_text()
         file_funcs_list = index_file_functions(source)
@@ -45,15 +58,31 @@ def apply_fix(file_path, generated_code):
                     raw_text = "\n".join(fixed_lines)
                 lines[start:end] = raw_text.splitlines()
 
-                file_path.write_text("\n".join(lines))
+        file_path.write_text("\n".join(lines))
         return True
         
-    except SyntaxError as e:
-        debug_log("Apply fix error", str(e))
+    except (SyntaxError, PermissionError, IOError, UnicodeDecodeError) as e:
+        debug_log("Apply fix error", f"{type(e).__name__}: {e}")
+        return False
+
+    except Exception as e:
+        debug_log("Apply fix error - unexpected", f"{type(e).__name__}: {e}")
         return False
 
 
-def fix(ctx: FixContext, max_attempts=2):
+def fix(ctx: FixContext, max_attempts=2) -> dict[str, bool | str]:
+    """
+    Attempt to fix a failing test using LLM-generated code.
+    
+    Retries up to max_attempts times if the fix doesn't work.
+    
+    Args:
+        ctx: FixContext containing all necessary context for the fix
+        max_attempts: Maximum number of fix attempts (default: 2)
+    
+    Returns:
+        Dict with keys: fixed (bool), diff (str), new_error (str)
+    """
     previous_error = None
 
     for attempt in range(max_attempts):
@@ -89,58 +118,106 @@ def fix(ctx: FixContext, max_attempts=2):
     return {"fixed": False, "diff": "", "new_error": ""}
 
 
-def try_fix_test(failure, test_file_path, test_code, source_code, path, fix_type, diff, affected_functions):
+def try_fix(failure, test_file_path, test_code, source_path, source_code, path, diff, affected_functions, target) -> dict[str, bool | str]:
+    """
+    Attempt to fix either the test file or source code.
+    
+    Args:
+        failure: Dict containing failure info (file, function, error, etc.)
+        test_file_path: Path to the test file
+        test_code: Content of the test file
+        source_path: Path to the source file
+        source_code: Content of the source file
+        path: Repository root path
+        diff: Git diff string
+        affected_functions: List of functions affected by changes
+        target: What to fix - 'test' or 'code'
+    
+    Returns:
+        Dict with keys: fixed (bool), diff (str), new_error (str)
+    """
+    if target == 'test':
+        prompt = fix_test_prompt
+        function_name = failure['function']
+        file_path = test_file_path
+    else:
+        prompt = fix_code_prompt
+        function_name = source_path
+        file_path = source_path
+
     context = FixContext(
-        prompt=fix_test_prompt,
-        function_name=failure['function'],
-        file_path=test_file_path,
+        prompt=prompt,
+        function_name=function_name,
+        file_path=file_path,
         function_code=source_code,
         test_code=test_code,
         error_message=failure['error'],
         repo_path=path,
         test_file=failure['file'],
         test_function=failure['function'],
-        fix_type=fix_type,
+        fix_type=target,
         diff=diff,
         affected=affected_functions,
         nodeid=failure['nodeid']
     )
     return fix(context)
 
-
-def try_fix_code(failure, test_code, source_file, source_code, path, fix_type, diff, affected_functions):
-    context = FixContext(
-        prompt=fix_code_prompt,
-        function_name=source_file,
-        file_path=source_file,
-        function_code=source_code,
-        test_code=test_code,
-        error_message=failure['error'],
-        repo_path=path,
+def _create_fix_result(failure, result, diagnosis, fix_type, file_changed) -> FixResult:
+    """
+    Create a FixResult object from fix attempt data.
+    
+    Args:
+        failure: Dict containing failure info (file, function, error)
+        result: Dict with fix results (fixed, diff, new_error)
+        diagnosis: Diagnosis object with cause and confidence
+        fix_type: Type of fix applied ('test', 'code', 'none')
+        file_changed: Path to the file that was modified
+    
+    Returns:
+        FixResult object
+    """
+    return FixResult(
         test_file=failure['file'],
         test_function=failure['function'],
+        error_message=failure['error'],
+        fixed=result.get("fixed", False),
         fix_type=fix_type,
-        diff=diff,
-        affected=affected_functions,
-        nodeid=failure['nodeid']
+        file_changed=str(file_changed) if file_changed else "",
+        diff=result.get("diff", ""),
+        new_error=result.get("new_error", ""),
+        cause=diagnosis.cause if diagnosis else "",
+        confidence=diagnosis.confidence if diagnosis else "low"
     )
-    return fix(context)
 
-
-def attempt_fix(failure, changed_files, path, mode):
+def attempt_fix(failure, changed_files, path, mode) -> FixResult:
+    """
+    Main entry point for fixing a single test failure.
+    
+    Diagnoses the failure, determines fix location, and attempts repair.
+    Handles cross-file bugs by checking the crash file first.
+    
+    Args:
+        failure: Dict with keys: file, function, error, crash_file, crash_line, nodeid
+        changed_files: List of files changed in the git diff
+        path: Repository root path
+        mode: Fix mode - 'auto', 'code', or 'test'
+    
+    Returns:
+        FixResult object with fix status and details
+    """
     test_file_path, test_code = read_file_content(failure['file'], path)
-
     repo_path = Path(path).resolve()
     crash_path = Path(failure['crash_file'])
+
+    result = {"fixed": False, "diff": "", "new_error": ""}
+    diagnosis = None
     
     try:
         crash_file = str(crash_path.relative_to(repo_path))
     except ValueError:
         crash_file = crash_path.name
 
-    is_test_file = "test_" in crash_file or "/tests/" in crash_file
-
-    if not is_test_file:
+    if not is_test_file(crash_file):
         files_to_try = [crash_file]
     else:
         files_to_try = []
@@ -180,78 +257,39 @@ def attempt_fix(failure, changed_files, path, mode):
         debug_log("Diagnosis", {"cause": diagnosis.cause, "fix_location": diagnosis.fix_location, "confidence": diagnosis.confidence})
 
         if mode == 'test':
-            result = try_fix_test(failure, test_file_path, test_code, source_code, path, mode, diff, affected)
-            if result["fixed"]:
-                return FixResult(
-                    test_file=failure['file'],
-                    test_function=failure['function'],
-                    error_message=failure['error'],
-                    fixed=result["fixed"],
-                    fix_type='test',
-                    file_changed=str(test_file_path),
-                    diff=result["diff"],
-                    new_error=result["new_error"],
-                    cause=diagnosis.cause,
-                    confidence=diagnosis.confidence
-                )
-            elif result["new_error"]:
-                break
-
+            target = 'test'
         elif mode == 'code':
-            result = try_fix_code(failure, test_code, source_path, source_code, path, mode, diff, affected)
-            if result["fixed"]:
-                return FixResult(
-                    test_file=failure['file'],
-                    test_function=failure['function'],
-                    error_message=failure['error'],
-                    fixed=result["fixed"],
-                    fix_type='code',
-                    file_changed=str(source_path),
-                    diff=result["diff"],
-                    new_error=result["new_error"],
-                    cause=diagnosis.cause,
-                    confidence=diagnosis.confidence
-                )
-                
-        elif mode == 'auto':
-            if diagnosis.fix_location == "test":
-                result = try_fix_test(failure, test_file_path, test_code, source_code, path, mode, diff, affected)
-                file_changed = str(test_file_path)
-                fix_type = 'test'
-            else:
-                result = try_fix_code(failure, test_code, source_path, source_code, path, mode, diff, affected)
-                file_changed = str(source_path)
-                fix_type = 'code'
+            target = 'code'
+        else:
+            target = diagnosis.fix_location
 
-            if result["fixed"]:
-                return FixResult(
-                    test_file=failure['file'],
-                    test_function=failure['function'],
-                    error_message=failure['error'],
-                    fixed=result["fixed"],
-                    fix_type=fix_type,
-                    file_changed=file_changed,
-                    diff=result["diff"],
-                    new_error=result["new_error"],
-                    cause=diagnosis.cause,
-                    confidence=diagnosis.confidence
-                )
+        file_changed = test_file_path if target == 'test' else source_path
+
+        result = try_fix(failure, test_file_path, test_code, source_path, source_code, path, diff, affected, target=target)
+        if result["fixed"]:
+            return _create_fix_result(failure, result, diagnosis, target, file_changed)
     
-    return FixResult(
-        test_file=failure['file'],
-        test_function=failure['function'],
-        error_message=failure['error'],
-        fixed=False,
-        fix_type='none',
-        file_changed="",
-        diff="",
-        new_error=result.get("new_error", "") if 'result' in dir() else "",
-        cause=diagnosis.cause if 'diagnosis' in dir() else "",
-        confidence=diagnosis.confidence if 'diagnosis' in dir() else "low"
-    )
+    return _create_fix_result(failure, result, diagnosis, 'none', "")
 
 
-def try_fix_temporarily(file_path, generated_code, nodeid, repo_path, original_error, new_imports=None):
+def try_fix_temporarily(file_path, generated_code, nodeid, repo_path, original_error, new_imports=None) -> dict[str, bool | str]:
+    """
+    Apply fix temporarily, verify it works, then restore original.
+    
+    Uses a try/finally block to ensure the original file is always restored,
+    regardless of whether the fix worked or an error occurred.
+    
+    Args:
+        file_path: Path object to the file to modify
+        generated_code: String containing the fixed function(s)
+        nodeid: Pytest node ID for running the specific test
+        repo_path: Repository root path
+        original_error: The original error message to compare against
+        new_imports: Optional list of import statements to add
+    
+    Returns:
+        Dict with keys: fixed (bool), diff (str), new_error (str)
+    """
     original_content = file_path.read_text()    
     try:
         if new_imports:

@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 import httpx
 
 from .output import _format_markdown_summary
@@ -7,7 +8,16 @@ from .utils import console
 
 
 def check_if_pull_request():
-    """Check if running in a PR context. Returns PR info or None."""
+    """
+    Check if running in a GitHub Actions pull request context.
+    
+    Reads GitHub Actions environment variables and event payload
+    to determine if this is a PR and extract PR details.
+    
+    Returns:
+        Dict with keys: number, repo, sha if in PR context
+        None if not in PR context
+    """
     event_name = os.getenv("GITHUB_EVENT_NAME")
     event_path = os.getenv("GITHUB_EVENT_PATH")
     repo = os.getenv("GITHUB_REPOSITORY")
@@ -15,7 +25,7 @@ def check_if_pull_request():
     if event_name != "pull_request":
         return None
     
-    if not event_path or not os.path.exists(event_path):
+    if not event_path or not Path(event_path).exists():
         return None
         
     with open(event_path) as f:
@@ -31,7 +41,19 @@ def check_if_pull_request():
 
 
 def post_pr_comment(repo, pr_number, body):
-    """Post a comment to a PR. Returns True if successful."""
+    """
+    Post a comment to a GitHub pull request.
+    
+    Uses the GitHub API with GITHUB_TOKEN for authentication.
+    
+    Args:
+        repo: Repository in 'owner/repo' format
+        pr_number: Pull request number
+        body: Comment body (markdown supported)
+        
+    Returns:
+        True if comment posted successfully, False otherwise
+    """
     token = os.getenv("GITHUB_TOKEN")
     
     if not token:
@@ -45,7 +67,7 @@ def post_pr_comment(repo, pr_number, body):
     }
     
     try:
-        response = httpx.post(url, json={"body": body}, headers=headers)
+        response = httpx.post(url, json={"body": body}, headers=headers, timeout=30)
         if response.status_code == 201:
             console.print(f"[green]✓[/green] Posted to PR #{pr_number}")
             return True
@@ -58,5 +80,14 @@ def post_pr_comment(repo, pr_number, body):
 
 
 def format_pr_comment(results):
+    """
+    Format fix results as a PR comment.
+    
+    Args:
+        results: List of FixResult objects
+        
+    Returns:
+        Markdown formatted string ready for posting
+    """
     """Format results for PR comment. Uses shared markdown formatter."""
     return _format_markdown_summary(results)

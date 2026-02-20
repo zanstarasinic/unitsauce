@@ -15,7 +15,20 @@ client = Anthropic(
     api_key=os.getenv("ANTHROPIC_API_KEY")
 )
 
+LLM_MODEL = "claude-sonnet-4-20250514"
+
 def parse_llm_response(response_text):
+    """
+    Parse structured response from LLM.
+    
+    Extracts explanation, code fix, and imports from XML-tagged response.
+    
+    Args:
+        response_text: Raw LLM response text
+        
+    Returns:
+        Dict with keys: explanation, code (or None), imports (list)
+    """
     explanation = ""
     code = None
     imports = []
@@ -40,7 +53,21 @@ def parse_llm_response(response_text):
 
 
 def call_llm(fix_prompt, functions, test_code, error_message, diff, failing_test, previous_attempt_error=None):
+    """
+    Call LLM to generate a fix for failing test.
     
+    Args:
+        fix_prompt: Prompt template for the fix
+        functions: Affected function source code
+        test_code: Failing test source code
+        error_message: Test error message
+        diff: Git diff showing changes
+        failing_test: Name of the failing test
+        previous_attempt_error: Error from previous fix attempt (for retry)
+        
+    Returns:
+        Dict with keys: explanation, code (or None), imports
+    """
     prompt_content = fix_prompt.format(
         function_code=functions,
         test_code=test_code,
@@ -53,35 +80,50 @@ def call_llm(fix_prompt, functions, test_code, error_message, diff, failing_test
         prompt_content += "\n\nNOTE: A previous fix attempt did not resolve the issue. Try a different approach."
     
     debug_log("PROMPT CONTENT", prompt_content)
-
-    with Live(Spinner("dots", text="Generating solution..."), console=console):
-        response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=8192,
-            system=SYSTEM_PROMPT,
-            messages=[
-                {"role": "user", "content": prompt_content}
-            ],
-        )
-    
-    console.print()
-    
-    result = parse_llm_response(response.content[0].text)
-    debug_log("Call LLM response: ", response.content[0].text)
+    try:
+        with Live(Spinner("dots", text="Generating solution..."), console=console):
+            response = client.messages.create(
+                model=LLM_MODEL,
+                max_tokens=8192,
+                system=SYSTEM_PROMPT,
+                messages=[
+                    {"role": "user", "content": prompt_content}
+                ],
+            )
+        
+        console.print()
+        
+        result = parse_llm_response(response.content[0].text)
+        debug_log("Call LLM response: ", response.content[0].text)
+    except Exception as e :
+        result = {"explanation": e, "code": None}
     
     return result  # {"explanation": "...", "code": "..."} or {"explanation": "...", "code": None}
 
 
-def diagnose(functions, test_code, error_message, diff,):
+def diagnose(functions, test_code, error_message, diff):
+    """
+    Diagnose the root cause of a test failure.
+    
+    Args:
+        functions: Affected function source code
+        test_code: Failing test source code
+        error_message: Test error message
+        diff: Git diff showing changes
+        
+    Returns:
+        Diagnosis object with cause, fix_location, and confidence
+    """
+
     prompt_content = DIAGNOSIS_PROMPT.format(
             function_code=functions,
             test_code=test_code,
             error_message=error_message,
             diff=diff
         )
-    with Live(Spinner("dots", text="Diagnosting..."), console=console):
+    with Live(Spinner("dots", text="Diagnosing..."), console=console):
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=LLM_MODEL,
             max_tokens=8192,
             system=SYSTEM_PROMPT,
             messages=[
@@ -100,8 +142,3 @@ def diagnose(functions, test_code, error_message, diff,):
     debug_log("Diagnosis", diagnosis)
 
     return diagnosis
-
-
-
-    
-
