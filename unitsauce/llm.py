@@ -14,6 +14,18 @@ load_dotenv()
 LLM_MODEL = "claude-sonnet-4-20250514"
 
 _client = None
+_usage = {"input_tokens": 0, "output_tokens": 0, "calls": 0}
+
+
+def get_usage():
+    return _usage.copy()
+
+
+def _track_usage(response):
+    if hasattr(response, 'usage'):
+        _usage["input_tokens"] += response.usage.input_tokens
+        _usage["output_tokens"] += response.usage.output_tokens
+    _usage["calls"] += 1
 
 def get_client():
     global _client
@@ -99,10 +111,11 @@ def call_llm(fix_prompt, functions, test_code, error_message, diff, failing_test
             )
         
         console.print()
-        
+        _track_usage(response)
+
         result = parse_llm_response(response.content[0].text)
         debug_log("Call LLM response: ", response.content[0].text)
-    except Exception as e :
+    except Exception as e:
         result = {"explanation": str(e), "code": None, "imports": []}
     
     return result  # {"explanation": "...", "code": "..."} or {"explanation": "...", "code": None}
@@ -140,6 +153,7 @@ def diagnose(functions, test_code, error_message, diff):
             )
 
         console.print()
+        _track_usage(response)
 
         result = parse_json(response.content[0].text)
         debug_log("Diagnosis LLM Output: ", result)

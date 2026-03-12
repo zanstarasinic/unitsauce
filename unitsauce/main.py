@@ -158,6 +158,12 @@ def main():
                 console.print(f"[yellow]⚠[/yellow] Fixed {fixed}/{total} tests in {elapsed:.1f}s")
             else:
                 console.print(f"[red]✗[/red] Fixed {fixed}/{total} tests in {elapsed:.1f}s")
+
+            from .llm import get_usage
+            usage = get_usage()
+            if usage["calls"] > 0:
+                total_tokens = usage["input_tokens"] + usage["output_tokens"]
+                console.print(f"[dim]  {usage['calls']} API calls · {total_tokens:,} tokens ({usage['input_tokens']:,} in / {usage['output_tokens']:,} out)[/dim]")
         
         elif args.output == 'markdown':
             print(format_summary(results, 'markdown'))

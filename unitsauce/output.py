@@ -156,7 +156,10 @@ def _format_json_summary(results):
     total = len(results)
     fixed = sum(1 for r in results if r.fixed)
     partial = sum(1 for r in results if r.partial)
-    
+
+    from .llm import get_usage
+    usage = get_usage()
+
     output = {
         "results": [_format_json(r) for r in results],
         "summary": {
@@ -164,7 +167,12 @@ def _format_json_summary(results):
             "fixed": fixed,
             "partial": partial,
             "failed": total - fixed - partial
+        },
+        "usage": {
+            "api_calls": usage["calls"],
+            "input_tokens": usage["input_tokens"],
+            "output_tokens": usage["output_tokens"],
         }
     }
-    
+
     return json.dumps(output, indent=2)
