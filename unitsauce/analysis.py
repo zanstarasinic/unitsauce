@@ -104,10 +104,12 @@ def get_failing_tests(path):
 
         for test in report["tests"]:
             if test["outcome"] == "failed":
+                raw_function = test["nodeid"].split("::")[-1]
+                function = raw_function.split("[")[0]
                 failures.append({
                     "file": test["nodeid"].split("::")[0],
                     "nodeid": test["nodeid"],
-                    "function": test["nodeid"].split("::")[-1],
+                    "function": function,
                     "error": test["call"]["crash"]["message"],
                     "crash_file": test["call"]["crash"]["path"],
                     "crash_line": test["call"]["crash"]["lineno"]

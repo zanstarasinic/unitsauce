@@ -366,3 +366,24 @@ class TestGetFailingTests:
         (tmp_path / "report.json").write_text("not json")
         failures = get_failing_tests(str(tmp_path))
         assert failures == []
+
+    def test_parametrized_test_strips_params(self, tmp_path):
+        report = {
+            "tests": [
+                {
+                    "outcome": "failed",
+                    "nodeid": "tests/test_math.py::test_add[1-2-3]",
+                    "call": {
+                        "crash": {
+                            "message": "assert 1 + 2 == 4",
+                            "path": "/abs/src/math.py",
+                            "lineno": 5,
+                        }
+                    },
+                },
+            ]
+        }
+        (tmp_path / "report.json").write_text(json.dumps(report))
+        failures = get_failing_tests(str(tmp_path))
+        assert failures[0]["function"] == "test_add"
+        assert failures[0]["nodeid"] == "tests/test_math.py::test_add[1-2-3]"
