@@ -122,30 +122,36 @@ def diagnose(functions, test_code, error_message, diff):
         Diagnosis object with cause, fix_location, and confidence
     """
 
-    prompt_content = DIAGNOSIS_PROMPT.format(
+    try:
+        prompt_content = DIAGNOSIS_PROMPT.format(
             function_code=functions,
             test_code=test_code,
             error_message=error_message,
             diff=diff
         )
-    with Live(Spinner("dots", text="Diagnosing..."), console=console):
-        response = client.messages.create(
-            model=LLM_MODEL,
-            max_tokens=8192,
-            system=SYSTEM_PROMPT,
-            messages=[
-                {"role": "user", "content": prompt_content}
-            ],
+        with Live(Spinner("dots", text="Diagnosing..."), console=console):
+            response = get_client().messages.create(
+                model=LLM_MODEL,
+                max_tokens=8192,
+                system=SYSTEM_PROMPT,
+                messages=[
+                    {"role": "user", "content": prompt_content}
+                ],
+            )
+
+        console.print()
+
+        result = parse_json(response.content[0].text)
+        debug_log("Diagnosis LLM Output: ", result)
+
+        diagnosis = Diagnosis(
+            cause=result.get("cause", "Unknown"),
+            fix_location=result.get("fix_location", "code"),
+            confidence=result.get("confidence", "low")
         )
-    
-    console.print()
+        debug_log("Diagnosis", diagnosis)
+        return diagnosis
 
-    result = parse_json(response.content[0].text)
-    debug_log("Diagnosis LLM Output: ", result)
-
-    
-
-    diagnosis = Diagnosis(cause=result.get("cause"), fix_location=result.get("fix_location"), confidence=result.get("confidence") )
-    debug_log("Diagnosis", diagnosis)
-
-    return diagnosis
+    except Exception as e:
+        debug_log("Diagnosis error", str(e))
+        return Diagnosis(cause="Diagnosis failed", fix_location="code", confidence="low")
