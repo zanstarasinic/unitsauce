@@ -400,4 +400,4 @@ def add_imports_to_file(file_path, new_imports):
         lines.insert(insert_idx, imp)
         insert_idx += 1
     
-    file_path.write_text('\n'.join(lines))
+    file_path.write_text('\n'.join(lines) + '\n')

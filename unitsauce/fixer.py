@@ -58,7 +58,7 @@ def apply_fix(file_path, generated_code) -> bool:
                     raw_text = "\n".join(fixed_lines)
                 lines[start:end] = raw_text.splitlines()
 
-        file_path.write_text("\n".join(lines))
+        file_path.write_text("\n".join(lines) + "\n")
         return True
         
     except (SyntaxError, PermissionError, IOError, UnicodeDecodeError) as e:
