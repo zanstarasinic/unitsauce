@@ -34,6 +34,7 @@ def main():
             epilog='Examples:\n  unitsauce .\n  unitsauce . --mode code\n  unitsauce . --mode test',
             formatter_class=argparse.RawDescriptionHelpFormatter
         )
+        parser.add_argument('--version', action='version', version='%(prog)s 0.1.1')
         parser.add_argument("path", nargs='?', default='.')
         parser.add_argument('--mode', choices=['auto', 'code', 'test'], default='auto', help='Fix mode (default: auto)')
         parser.add_argument('--output', choices=['console', 'markdown', 'json'], default='console', help='Output format (default: console)')
