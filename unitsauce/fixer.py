@@ -17,6 +17,19 @@ from .prompts import fix_code_prompt, fix_test_prompt
 from .utils import debug_log, is_test_file
 
 
+def _gather_conftest(test_file_path, repo_path):
+    parts = []
+    current = test_file_path.parent
+    while current >= repo_path:
+        conftest = current / "conftest.py"
+        if conftest.is_file():
+            parts.append(conftest.read_text(encoding='utf-8', errors='ignore'))
+        current = current.parent
+    if not parts:
+        return ""
+    return "\n\n".join(reversed(parts))
+
+
 def apply_fix(file_path, generated_code) -> bool:
     """
     Apply generated code fix to a file.
@@ -213,6 +226,12 @@ def attempt_fix(failure, changed_files, path, mode) -> FixResult:
     """
     test_file_path, test_code = read_file_content(failure['file'], path)
     repo_path = Path(path).resolve()
+
+    if test_file_path:
+        conftest_code = _gather_conftest(test_file_path, repo_path)
+        if conftest_code:
+            test_code = test_code + "\n\n" + conftest_code
+
     crash_path = Path(failure['crash_file'])
 
     result = {"fixed": False, "diff": "", "new_error": ""}
