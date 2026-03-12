@@ -96,7 +96,7 @@ def call_llm(fix_prompt, functions, test_code, error_message, diff, failing_test
         result = parse_llm_response(response.content[0].text)
         debug_log("Call LLM response: ", response.content[0].text)
     except Exception as e :
-        result = {"explanation": e, "code": None}
+        result = {"explanation": str(e), "code": None, "imports": []}
     
     return result  # {"explanation": "...", "code": "..."} or {"explanation": "...", "code": None}
 
