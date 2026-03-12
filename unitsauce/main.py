@@ -40,12 +40,17 @@ def main():
         parser.add_argument('--output', choices=['console', 'markdown', 'json'], default='console', help='Output format (default: console)')
         parser.add_argument('--apply', action='store_true', help='Apply successful fixes to disk (does not commit)')
         parser.add_argument('--max-tests', type=int, default=None, help='Maximum number of failing tests to process')
+        parser.add_argument('--model', type=str, default=None, help='Claude model to use (default: claude-sonnet-4-20250514)')
         parser.add_argument('--debug', action='store_true', help='Enable debug output')
 
         args = parser.parse_args()
-    
+
         if args.debug:
             os.environ["DEBUG"] = "true"
+
+        if args.model:
+            from . import llm
+            llm.LLM_MODEL = args.model
 
         start_time = time.time()
         path = args.path
