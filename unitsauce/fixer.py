@@ -304,10 +304,10 @@ def try_fix_temporarily(file_path, generated_code, nodeid, repo_path, original_e
         passed, error = run_single_test(repo_path, nodeid)
         if passed:
             return {"fixed": True, "diff": diff, "new_error": ""}
-        
-        if error != original_error:
+
+        if original_error and original_error not in error:
             return {"fixed": False, "diff": diff, "new_error": error}
-        
+
         return {"fixed": False, "diff": "", "new_error": ""}
     
     finally:

@@ -346,7 +346,7 @@ def run_single_test(path, nodeid):
     if result.returncode == 0:
         return True, ""
     else:
-        return False, result.stderr
+        return False, result.stdout + result.stderr
     
 
 def validate_generated_code(code):
