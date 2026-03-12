@@ -15,7 +15,6 @@ authors = [
 dependencies = [
     "anthropic",
     "python-dotenv",
-    "art",
     "rich",
     "pytest",
     "pytest-json-report",
