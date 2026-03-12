@@ -264,22 +264,23 @@ def split_functions_raw(code):
 def read_file_content(filename, search_path):
     """
     Read content from a file, searching by name..
-    
+
     Args:
-        filename: Filename to search for
+        filename: Filename or relative path to search for
         search_path: Directory to search in
-        
+
     Returns:
         Tuple of (file_path, file_content) or (None, None) if not found
     """
-    file_path = next(Path(search_path).rglob(filename), None)
+    direct = Path(search_path) / filename
+    if direct.is_file():
+        return direct, direct.read_text(encoding='utf-8', errors='ignore')
+
+    file_path = next(Path(search_path).rglob(Path(filename).name), None)
     if not file_path:
         return None, None
-    
-    with open(file_path, encoding='utf-8', errors='ignore') as open_file:
-        file_content = open_file.read()
-    
-    return file_path, file_content
+
+    return file_path, file_path.read_text(encoding='utf-8', errors='ignore')
 
     
 
