@@ -25,6 +25,7 @@ inputs:
 outputs:
   result:
     description: 'JSON result of fix attempts'
+    value: ${{ steps.run.outputs.result }}
 
 runs:
   using: 'composite'
@@ -40,10 +41,13 @@ runs:
         pip install ${{ github.action_path }}
     
     - name: Run UnitSauce
+      id: run
       shell: bash
       env:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic_api_key }}
         GITHUB_TOKEN: ${{ inputs.github_token }}
         DEBUG: ${{ inputs.debug }}
       run: |
+        result=$(unitsauce . --mode ${{ inputs.mode }} --output json)
+        echo "result=$result" >> $GITHUB_OUTPUT
         unitsauce . --mode ${{ inputs.mode }} --output markdown >> $GITHUB_STEP_SUMMARY
