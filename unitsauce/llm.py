@@ -11,11 +11,18 @@ from .utils import console, debug_log, parse_json
 
 load_dotenv()
 
-client = Anthropic(
-    api_key=os.getenv("ANTHROPIC_API_KEY")
-)
-
 LLM_MODEL = "claude-sonnet-4-20250514"
+
+_client = None
+
+def get_client():
+    global _client
+    if _client is None:
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise RuntimeError("ANTHROPIC_API_KEY environment variable is not set")
+        _client = Anthropic(api_key=api_key)
+    return _client
 
 def parse_llm_response(response_text):
     """
@@ -82,7 +89,7 @@ def call_llm(fix_prompt, functions, test_code, error_message, diff, failing_test
     debug_log("PROMPT CONTENT", prompt_content)
     try:
         with Live(Spinner("dots", text="Generating solution..."), console=console):
-            response = client.messages.create(
+            response = get_client().messages.create(
                 model=LLM_MODEL,
                 max_tokens=8192,
                 system=SYSTEM_PROMPT,
