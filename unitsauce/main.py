@@ -75,6 +75,9 @@ def main():
         changed_files = get_git_diff(path)
         changed_files = [f for f in changed_files if f.endswith('.py')]
 
+        if not changed_files:
+            console.print("[yellow]⚠[/yellow] No changed Python files detected. Fixes will be limited to crash-site analysis only.\n")
+
         groups = {}
         for failure in failures:
             key = (failure.get('crash_file', ''), failure.get('error', ''))
