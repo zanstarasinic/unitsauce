@@ -38,6 +38,7 @@ def main():
         parser.add_argument('--mode', choices=['auto', 'code', 'test'], default='auto', help='Fix mode (default: auto)')
         parser.add_argument('--output', choices=['console', 'markdown', 'json'], default='console', help='Output format (default: console)')
         parser.add_argument('--apply', action='store_true', help='Apply successful fixes to disk (does not commit)')
+        parser.add_argument('--max-tests', type=int, default=None, help='Maximum number of failing tests to process')
         parser.add_argument('--debug', action='store_true', help='Enable debug output')
 
         args = parser.parse_args()
@@ -59,7 +60,11 @@ def main():
             console.print("[green]✓[/green] All tests pass!")
             sys.exit(0)
         
-        console.print(f"[green]✓[/green] Found {len(failures)} failing tests\n")
+        if args.max_tests and len(failures) > args.max_tests:
+            console.print(f"[yellow]⚠[/yellow] {len(failures)} failing tests, processing first {args.max_tests}\n")
+            failures = failures[:args.max_tests]
+        else:
+            console.print(f"[green]✓[/green] Found {len(failures)} failing tests\n")
 
         changed_files = get_git_diff(path)
         changed_files = [f for f in changed_files if f.endswith('.py')]
