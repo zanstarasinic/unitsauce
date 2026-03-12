@@ -204,7 +204,7 @@ def index_file_functions(source):
     funcs = []
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             funcs.append({
                 "name": node.name,
                 "start": node.lineno,
@@ -231,34 +231,34 @@ def extract_function_source(code: str, func):
 
 def split_functions_raw(code):
     """
-    Split code into individual functions, preserving raw text with comments.
-    
-    Unlike AST parsing, this keeps comments and formatting intact.
-    
+    Split code into individual top-level functions, preserving raw text.
+
+    Uses AST to find function boundaries (including decorators), then
+    extracts the raw source lines. Handles async functions and decorators.
+
     Args:
         code: Python source code containing one or more functions
-        
+
     Returns:
         Dict mapping function names to their raw source code
     """
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return {}
+
     lines = code.splitlines()
     functions = {}
-    current_name = None
-    current_lines = []
-    
-    for line in lines:
-        stripped_line = line.lstrip()
-        if stripped_line.startswith('def '):
-            if current_name:
-                functions[current_name] = '\n'.join(current_lines)
-            current_name = line.split('(')[0].replace('def ', '').strip()
-            current_lines = [line]
-        elif current_name:
-            current_lines.append(line)
-    
-    if current_name:
-        functions[current_name] = '\n'.join(current_lines)
-    
+
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            start = node.lineno
+            if node.decorator_list:
+                start = node.decorator_list[0].lineno
+            end = node.end_lineno
+            raw = "\n".join(lines[start - 1 : end])
+            functions[node.name] = raw
+
     return functions
 
 def read_file_content(filename, search_path):
