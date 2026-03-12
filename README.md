@@ -19,7 +19,7 @@ pip install unitsauce
 5. **Verifies it works** — runs the test again
 6. **Posts to your PR** — with confidence score
 
-You stay in control. It never auto-commits.
+You stay in control. It never auto-commits unless you use `--apply`.
 
 ---
 
@@ -35,6 +35,20 @@ unitsauce .
 unitsauce . --mode auto    # Let it decide (default)
 unitsauce . --mode code    # Only fix source code
 unitsauce . --mode test    # Only update tests
+
+# Apply fixes to disk
+unitsauce . --apply
+
+# Limit processing
+unitsauce . --max-tests 5
+
+# Use a different model
+unitsauce . --model claude-opus-4-20250514
+
+# Output formats
+unitsauce . --output console   # Default, colored terminal output
+unitsauce . --output markdown  # For CI step summaries
+unitsauce . --output json      # Structured output with usage stats
 ```
 
 ### GitHub Action
@@ -50,7 +64,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - uses: zanstarasinic/unitsauce@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -77,6 +91,8 @@ When a test fails, UnitSauce posts a comment like this:
 >
 > **Root cause:** Method renamed from `get_discount_percentage()` to `get_tier_discount()`
 >
+> 📁 `src/api.py`
+>
 > ```diff
 > - discount = user.get_discount_percentage()
 > + discount = user.get_tier_discount()
@@ -91,7 +107,13 @@ When a test fails, UnitSauce posts a comment like this:
 | **Root Cause Diagnosis** | Explains *why* the test failed, not just that it failed |
 | **Confidence Scoring** | High / Medium / Low — know when to trust the fix |
 | **Cross-File Detection** | Catches bugs in files you didn't change |
+| **Fixture Awareness** | Includes conftest.py fixtures in analysis context |
+| **Failure Deduplication** | Groups identical failures, fixes once per group |
 | **Smart Imports** | Adds missing imports when needed |
+| **Parametrized Tests** | Handles `test_foo[param]` style tests |
+| **Async Support** | Works with `async def` test functions and source code |
+| **Apply Mode** | `--apply` writes fixes to disk without committing |
+| **Cost Visibility** | Reports API calls and token usage per run |
 | **Safe by Default** | Never auto-commits. Always human-in-the-loop |
 
 ---
@@ -133,11 +155,12 @@ When a test fails, UnitSauce posts a comment like this:
 
 1. Runs `pytest --json-report` to get structured failure data
 2. Gets `git diff` to see what changed
-3. Extracts the failing test and relevant source code
-4. Sends context to Claude with a focused prompt
-5. Validates the generated fix compiles
-6. Applies fix temporarily, runs test to verify
-7. If it passes, formats and posts to PR
+3. Groups duplicate failures to avoid redundant API calls
+4. Extracts the failing test, relevant source code, and conftest.py fixtures
+5. Sends context to Claude with a focused prompt
+6. Validates the generated fix compiles
+7. Applies fix temporarily, runs test to verify
+8. If it passes, formats and posts to PR (updates existing comment)
 
 ---
 
@@ -159,6 +182,11 @@ When a test fails, UnitSauce posts a comment like this:
 ---
 
 ## Contributing
+
+```bash
+pip install -e .
+pytest
+```
 
 Issues and PRs welcome.
 
