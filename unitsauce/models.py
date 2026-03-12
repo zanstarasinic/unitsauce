@@ -40,4 +40,7 @@ class FixResult:
     cause: str = ""
     confidence: str = "low"
     failure_reason: str = ""
+    generated_code: str | None = None
+    new_imports: list | None = None
+    file_path: Path | None = None
 

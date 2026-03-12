@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 
 from .github import check_if_pull_request, format_pr_comment, post_pr_comment
 from .output import format_summary
-from .fixer import attempt_fix
-from .analysis import get_failing_tests, get_git_diff, run_tests
+from .fixer import apply_fix, attempt_fix
+from .analysis import add_imports_to_file, get_failing_tests, get_git_diff, run_tests
 from .utils import console
 
 load_dotenv()
@@ -37,6 +37,7 @@ def main():
         parser.add_argument("path", nargs='?', default='.')
         parser.add_argument('--mode', choices=['auto', 'code', 'test'], default='auto', help='Fix mode (default: auto)')
         parser.add_argument('--output', choices=['console', 'markdown', 'json'], default='console', help='Output format (default: console)')
+        parser.add_argument('--apply', action='store_true', help='Apply successful fixes to disk (does not commit)')
         parser.add_argument('--debug', action='store_true', help='Enable debug output')
 
         args = parser.parse_args()
@@ -77,6 +78,17 @@ def main():
                 console.print(f"[yellow]⚠[/yellow] Partial fix\n")
             else:
                 console.print(f"[red]✗[/red] Could not fix\n")
+
+        if args.apply:
+            applied = 0
+            for result in results:
+                if result.fixed and result.generated_code:
+                    if result.new_imports:
+                        add_imports_to_file(result.file_path, result.new_imports)
+                    apply_fix(result.file_path, result.generated_code)
+                    applied += 1
+            if applied:
+                console.print(f"[green]✓[/green] Applied {applied} fix(es) to disk\n")
 
         pr = check_if_pull_request()
         if pr:

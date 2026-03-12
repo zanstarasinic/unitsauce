@@ -107,6 +107,9 @@ def fix(ctx: FixContext, max_attempts=2) -> dict[str, bool | str]:
         debug_log("Fix result", result)
 
         if result["fixed"]:
+            result["generated_code"] = llm_result["code"]
+            result["new_imports"] = llm_result.get("imports", [])
+            result["file_path"] = ctx.file_path
             return result
         
         if result["new_error"] and result["new_error"] != ctx.error_message:
@@ -186,7 +189,10 @@ def _create_fix_result(failure, result, diagnosis, fix_type, file_changed) -> Fi
         diff=result.get("diff", ""),
         new_error=result.get("new_error", ""),
         cause=diagnosis.cause if diagnosis else "",
-        confidence=diagnosis.confidence if diagnosis else "low"
+        confidence=diagnosis.confidence if diagnosis else "low",
+        generated_code=result.get("generated_code"),
+        new_imports=result.get("new_imports"),
+        file_path=result.get("file_path"),
     )
 
 def attempt_fix(failure, changed_files, path, mode) -> FixResult:
