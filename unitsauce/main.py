@@ -96,12 +96,13 @@ def main():
             if applied:
                 console.print(f"[green]✓[/green] Applied {applied} fix(es) to disk\n")
 
-        pr = check_if_pull_request()
-        if pr:
-            with console.status("Posting to PR..."):
-                comment = format_pr_comment(results)
-                post_pr_comment(pr['repo'], pr['number'], comment)
-            console.print(f"[green]✓[/green] Posted to PR #{pr['number']}")
+        if args.output == 'console':
+            pr = check_if_pull_request()
+            if pr:
+                with console.status("Posting to PR..."):
+                    comment = format_pr_comment(results)
+                    post_pr_comment(pr['repo'], pr['number'], comment)
+                console.print(f"[green]✓[/green] Posted to PR #{pr['number']}")
 
         elapsed = time.time() - start_time
         total = len(results)
