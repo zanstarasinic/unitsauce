@@ -391,7 +391,8 @@ def add_imports_to_file(file_path, new_imports):
         if stripped.startswith('import ') or stripped.startswith('from '):
             last_import_idx = i
     
-    new_imports = [imp for imp in new_imports if imp not in content]
+    existing_lines = set(line.strip() for line in lines)
+    new_imports = [imp for imp in new_imports if imp.strip() not in existing_lines]
     
     if not new_imports:
         return
