@@ -75,20 +75,55 @@ def main():
         changed_files = get_git_diff(path)
         changed_files = [f for f in changed_files if f.endswith('.py')]
 
-        results = []
+        groups = {}
         for failure in failures:
-            test_name = failure['function']
-            
+            key = (failure.get('crash_file', ''), failure.get('error', ''))
+            groups.setdefault(key, []).append(failure)
+
+        deduped = sum(1 for g in groups.values() if len(g) > 1)
+        if deduped:
+            console.print(f"[dim]Grouped into {len(groups)} unique failures ({deduped} duplicates)[/dim]\n")
+
+        results = []
+        fix_cache = {}
+        for key, group in groups.items():
+            representative = group[0]
+            test_name = representative['function']
+
             with console.status(f"Fixing {test_name}..."):
-                result = attempt_fix(failure, changed_files, path, args.mode)
-            results.append(result)
-            
+                result = attempt_fix(representative, changed_files, path, args.mode)
+            fix_cache[key] = result
+
             if result.fixed:
                 console.print(f"[green]✓[/green] Fixed\n")
             elif result.partial:
                 console.print(f"[yellow]⚠[/yellow] Partial fix\n")
             else:
                 console.print(f"[red]✗[/red] Could not fix\n")
+
+        for failure in failures:
+            key = (failure.get('crash_file', ''), failure.get('error', ''))
+            cached = fix_cache[key]
+            if failure is groups[key][0]:
+                results.append(cached)
+            else:
+                from .models import FixResult
+                results.append(FixResult(
+                    test_file=failure['file'],
+                    test_function=failure['function'],
+                    error_message=failure['error'],
+                    fixed=cached.fixed,
+                    fix_type=cached.fix_type,
+                    diff=cached.diff,
+                    file_changed=cached.file_changed,
+                    partial=cached.partial,
+                    new_error=cached.new_error,
+                    cause=cached.cause,
+                    confidence=cached.confidence,
+                    generated_code=cached.generated_code,
+                    new_imports=cached.new_imports,
+                    file_path=cached.file_path,
+                ))
 
         if args.apply:
             applied = 0
