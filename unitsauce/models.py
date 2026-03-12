@@ -38,6 +38,6 @@ class FixResult:
     partial: bool = False
     new_error: str | None = None
     cause: str = ""
-    confidence: str = "low",
+    confidence: str = "low"
     failure_reason: str = ""
 
