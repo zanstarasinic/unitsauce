@@ -21,7 +21,7 @@ def get_client():
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise RuntimeError("ANTHROPIC_API_KEY environment variable is not set")
-        _client = Anthropic(api_key=api_key)
+        _client = Anthropic(api_key=api_key, max_retries=3, timeout=120.0)
     return _client
 
 def parse_llm_response(response_text):
