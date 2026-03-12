@@ -84,9 +84,11 @@ def _format_markdown(result):
         md += f"**Suggested Fix** · {confidence_badge}\n\n"
         md += f"> `{error_short}`\n\n"
         md += f"**Root cause:** {cause_text}\n\n"
+        if result.file_changed:
+            md += f"📁 `{result.file_changed}`\n\n"
         md += format_diff_section(result.diff)
         md += "\n\n"
-    
+
     elif result.partial:
         md = f"### ⚠️ {result.test_file}::{result.test_function}\n\n"
         md += f"**Partial Fix** · {confidence_badge}\n\n"
@@ -94,15 +96,17 @@ def _format_markdown(result):
         md += f"**Root cause:** {cause_text}\n\n"
         new_error_short = result.new_error[:150] if result.new_error else "Unknown error"
         md += f"**New error:** `{new_error_short}`\n\n"
+        if result.file_changed:
+            md += f"📁 `{result.file_changed}`\n\n"
         md += format_diff_section(result.diff)
         md += "\n\n"
-    
+
     else:
         md = f"### ❌ {result.test_file}::{result.test_function}\n\n"
         md += f"**Could Not Fix** · {confidence_badge}\n\n"
         md += f"> `{error_short}`\n\n"
         md += f"**Root cause:** {cause_text}\n\n"
-    
+
     return md
 
 
